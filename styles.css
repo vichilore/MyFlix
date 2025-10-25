@@ -200,6 +200,71 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   .c-title--xl{ font-size:18px; }
 }
 
+/* ===== ALL GRID (Tutti) ===== */
+.all-title{
+  font-size: clamp(1.25rem, 1.6vw, 1.6rem);
+  font-weight: 900;
+  margin: 18px 0 10px;
+}
+
+.all-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (min-width: 744px) and (max-width: 1180px){
+  .all-grid{
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px;
+  }
+}
+@media (max-width: 640px){
+  .all-grid{
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+}
+
+/* carta riusando lo stile delle card del carosello */
+.all-card{
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease, border-color .2s;
+}
+.all-card:hover{ transform: translateY(-3px) scale(1.01); background: var(--cardHover); box-shadow: var(--shadow); border-color:#2b2b36; }
+
+.all-poster{
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+  background: #0e0e12;
+}
+
+.all-badges{
+  position: absolute; left: 8px; top: 8px; display:flex; gap: 6px; z-index: 2;
+}
+.all-badge{
+  font-size: 11px; padding: 3px 8px; border-radius: 999px;
+  background: rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18); backdrop-filter: blur(4px);
+}
+
+.all-title-sm{
+  margin-top: 6px;
+  font-weight: 800;
+  font-size: .9rem;
+  padding: 0 4px 6px;
+  text-align: center;
+  display: block;
+}
+
+
 /* ===== WATCH PAGE ===== */
 .watch{ color:#fff; }
 .watch-hero{
@@ -339,6 +404,7 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   justify-content: center;
   font-weight: 700;
   padding: 10px 16px;
+  padding-top: 10px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
@@ -494,3 +560,13 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .inp.code{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:.12em; text-transform: uppercase; }
 
 
+.focus-card{
+  outline: 3px solid var(--accent, #f33);
+  border-color: var(--accent, #f33) !important;
+  animation: focusPulse 1.5s ease;
+}
+
+@keyframes focusPulse{
+  0%{ transform: scale(1.05); }
+  100%{ transform: scale(1); }
+}

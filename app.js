@@ -156,14 +156,15 @@ const seriesList = [
   ),
   {
     id: 'SnK',
-    title: 'Shingeki no Kyojin (SUB ITA)',
+    title: 'Attack On Titan (SUB ITA)',
     image: 'https://i.imgur.com/n2G627u.jpeg',
     generator: 'auto-seasonal',
     seasons: [
       quickAddSeason('https://srv30-emiko.sweetpixel.org/DDL/ANIME/ShingekiNoKyojin/ShingekiNoKyojin_Ep_01_SUB_ITA.mp4', 25, 'Stagione 1'),
       quickAddSeason('https://srv22-remote.sweetpixel.org/DDL/ANIME/ShingekiNoKyojin2/ShingekiNoKyojin2_Ep_01_SUB_ITA.mp4', 12, 'Stagione 2', {image:'https://i.imgur.com/pipc5g7.jpeg'}),
-      quickAddSeason('https://srv22-remote.sweetpixel.org/DDL/ANIME/ShingekiNoKyojin3/ShingekiNoKyojin3_Ep_01_SUB_ITA.mp4', 22, 'Stagione 3', {image:'https://i.imgur.com/GlZeuLY.jpeg'}),
-      quickAddSeason('https://srv22-remote.sweetpixel.org/DDL/ANIME/ShingekiNoKyojinFinal/ShingekiNoKyojinFinal_Ep_01_SUB_ITA.mp4', 16, 'Stagione Final', {image:'https://i.imgur.com/f2nyTAX.jpeg'}),
+      quickAddSeason('https://srv28-kokeshi.sweetpixel.org/DDL/ANIME/ShingekiNoKyojin3/ShingekiNoKyojin3_Ep_01_SUB_ITA.mp4', 22, 'Stagione 3', {image:'https://i.imgur.com/GlZeuLY.jpeg'}),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/ShingekiNoKyojin4/ShingekiNoKyojin4_Ep_01_SUB_ITA.mp4', 16, 'Stagione 4 Parte 1', {image:'https://i.imgur.com/f2nyTAX.jpeg'}),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/ShingekiNoKyojin4Part2/ShingekiNoKyojin4Part2_Ep_01_SUB_ITA.mp4', 12, 'Stagione 4 Parte 2', {image:'https://i.imgur.com/f2nyTAX.jpeg'}),
     ]
   },
   {
@@ -222,7 +223,116 @@ const seriesList = [
       quickAddSeason('https://srv13-eraser.sweetpixel.org/DDL/ANIME/JigokurakuITA/Jigokuraku_Ep_01_ITA.mp4', 13, 'Stagione 1'),
     ]
   },
-
+   {
+    id: 'gachiakuta-ita',
+    title: 'Gachiakuta (ITA)',
+    image: 'https://i.imgur.com/bmjQnGO.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/GachiakutaITA/Gachiakuta_Ep_01_ITA.mp4', 13, 'Stagione 1'),
+    ]
+  },
+   quickAddSeriesFromUrl(
+    'https://srv21-airbus.sweetpixel.org/DDL/ANIME/FairyTailITA/FairyTail_Ep_001_ITA.mp4',
+    'Fairy Tail (ITA)',
+    175,
+    {image: 'https://i.imgur.com/jtAk33L.jpeg'}
+  ),
+  {
+    id: 'MyheroAcademiaITA',
+    title: 'My Hero Academia (ITA)',
+    image: 'https://i.imgur.com/a6oZaJX.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv12-bananini.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademiaITA/BokuNoHeroAcademia_Ep_01_ITA.mp4', 13, 'Stagione 1'),
+      quickAddSeason('https://srv27-gordon.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademia2ITA/BokuNoHeroAcademia2_Ep_01_ITA.mp4', 25, 'Stagione 2'),
+      quickAddSeason('https://srv26-lampada.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademia3ITA/BokuNoHeroAcademia3_Ep_01_ITA.mp4', 25, 'Stagione 3'),
+      quickAddSeason('https://srv26-lampada.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademia4ITA/BokuNoHeroAcademia4_Ep_01_ITA.mp4', 25, 'Stagione 4'),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademia5ITA/BokuNoHeroAcademia5_Ep_01_ITA.mp4', 25, 'Stagione 5'),
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademia6ITA/BokuNoHeroAcademia6_Ep_01_ITA.mp4', 25, 'Stagione 6'),
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/BokuNoHeroAcademia7ITA/BokuNoHeroAcademia7_Ep_01_ITA.mp4', 21, 'Stagione 7'),
+    ]
+  },
+  {
+    id: 'drstoneITA',
+    title: 'Dr.Stone (ITA)',
+    image: 'https://i.imgur.com/73E1OPV.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv26-lampada.sweetpixel.org/DDL/ANIME/DrStoneITA/DrStone_Ep_01_ITA.mp4', 24, 'Stagione 1'),
+      quickAddSeason('https://srv20-coat.sweetpixel.org/DDL/ANIME/DrStone2ITA/DrStone2_Ep_01_ITA.mp4', 11, 'Stagione 2'),
+      quickAddSeason('https://srv12-bananini.sweetpixel.org/DDL/ANIME/DrStone3ITA/DrStone3_Ep_01_ITA.mp4', 22, 'Stagione 3'),
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/DrStone4ITA/DrStone4_Ep_01_ITA.mp4', 24, 'Stagione 4'),
+    ]
+  },
+  quickAddSeriesFromUrl(
+    'https://srv17-geisha.sweetpixel.org/DDL/ANIME/BleachITA/Bleach_Ep_001_ITA.mp4',
+    'Bleach (ITA)',
+    366,
+    {image: 'https://i.imgur.com/dZm9Lu4.jpeg'}
+  ),
+  quickAddSeriesFromUrl(
+    'https://srv15-cuccia.sweetpixel.org/DDL/ANIME/DetectiveConan/DetectiveConan_Ep_0001_ITA.mp4',
+    'Detective Conan (ITA)',
+    1160,
+    {image: 'https://i.imgur.com/Uh6TWm9.jpeg'}
+  ),
+  {
+    id: 'haikyuITA',
+    title: 'Haikyuu!! (ITA)',
+    image: 'https://i.imgur.com/UR9hVbS.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv13-eraser.sweetpixel.org/DDL/ANIME/HaikyuuITA/Haikyuu_Ep_01_ITA.mp4', 25, 'Stagione 1'),
+      quickAddSeason('https://srv17-geisha.sweetpixel.org/DDL/ANIME/Haikyuu2ITA/Haikyuu2_Ep_01_ITA.mp4', 25, 'Stagione 2'),
+      quickAddSeason('https://srv22-remote.sweetpixel.org/DDL/ANIME/Haikyuu3ITA/Haikyuu3_Ep_01_ITA.mp4', 10, 'Stagione 3'),
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/HaikyuuToTheTopITA/HaikyuuToTheTop_Ep_01_ITA.mp4', 13, 'Stagione 4'),
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/HaikyuuToTheTop2ITA/HaikyuuToTheTop2_Ep_01_ITA.mp4', 12, 'Stagione 5'),
+    ]
+  },
+  {
+    id: 'bluelock-ita',
+    title: 'Blue Lock(ITA)',
+    image: 'https://i.imgur.com/YOYjAco.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv26-lampada.sweetpixel.org/DDL/ANIME/BlueLockITA/BlueLock_Ep_01_ITA.mp4', 24, 'Stagione 1'),
+      quickAddSeason('https://srv18-tsurukusa.sweetpixel.org/DDL/ANIME/BlueLock2ITA/BlueLock2_Ep_01_ITA.mp4', 14, 'Stagione 2')
+    ]
+  },
+  {
+    id: 'soloLeveling-ita',
+    title: 'Solo Leveling(ITA)',
+    image: 'https://i.imgur.com/uHGaLy8.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/OreDakeLevelUpNaKenITA/OreDakeLevelUpNaKen_Ep_01_ITA.mp4', 12, 'Stagione 1'),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/OreDakeLevelUpNaKen2ITA/OreDakeLevelUpNaKen2_Ep_01_ITA.mp4', 13, 'Stagione 2')
+    ]
+  },
+  {
+    id: 'TheEminenceInShadow-ita',
+    title: 'The Eminence In Shadow (ITA)',
+    image: 'https://i.imgur.com/VDfJF58.png',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv19-sushi.sweetpixel.org/DDL/ANIME/KageNoJitsuryokushaNiNaritakuteITA/KageNoJitsuryokushaNiNaritakute_Ep_01_ITA.mp4', 20, 'Stagione 1'),
+      quickAddSeason('https://srv13-eraser.sweetpixel.org/DDL/ANIME/KageNoJitsuryokushaNiNaritakute2ITA/KageNoJitsuryokushaNiNaritakute2_Ep_01_ITA.mp4', 12, 'Stagione 2')
+    ]
+  },
+  {
+    id: 'DemonSlayer-ita',
+    title: 'Demon Slayer (ITA)',
+    image: 'https://i.imgur.com/Yzj0U7Z.jpeg',
+    generator: 'auto-seasonal',
+    seasons: [
+      quickAddSeason('https://srv12-bananini.sweetpixel.org/DDL/ANIME/KimetsuNoYaibaITA/KimetsuNoYaiba_Ep_01_ITA.mp4', 26, 'Stagione 1'),
+      quickAddSeason('https://srv15-cuccia.sweetpixel.org/DDL/ANIME/KimetsuNoYaibaMugenRessha-henITA/KimetsuNoYaibaMugenRessha-hen_Ep_01_ITA.mp4', 7, 'Stagione 2'),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/KimetsuNoYaibaYuukaku-henITA/KimetsuNoYaibaYuukaku-hen_Ep_01_ITA.mp4', 11, 'Stagione 3'),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/KimetsuNoYaibaKatanakajiNoSato-henITA/KimetsuNoYaibaKatanakajiNoSato-hen_Ep_01_ITA.mp4', 11, 'Stagione 4'),
+      quickAddSeason('https://srv16-suisen.sweetpixel.org/DDL/ANIME/KimetsuNoYaibaHashiraGeiko-henITA/KimetsuNoYaibaHashiraGeiko-hen_Ep_01_ITA.mp4', 8, 'Stagione 5'),
+    ]
+  },
 ];
 
 /* ---------- Stato app + ricerca ---------- */
@@ -233,6 +343,11 @@ const watchTitle    = $('#watchTitle');
 const seasonPicker  = $('#seasonPicker');
 const episodeList   = $('#episodeList');
 const watchResumeBtn= $('#watchResumeBtn');
+
+const all          = $('#all');
+const allGrid      = $('#allGrid');
+const navHomeBtn   = $('#navHomeBtn');
+const navAllBtn    = $('#navAllBtn');
 
 const playerOverlay = $('#playerOverlay');
 const playerClose   = $('#playerClose');
@@ -266,77 +381,334 @@ let currentEp = null;
 let currentSeasIndex = 0;
 
 
+/*********************************
+ * Watch Together – Config (compat)
+ *********************************/
+const WS_URL = (window.VICHIFLIX_WS_URL) || ""; // es. "ws://localhost:3000/ws" in locale
+const TOG_HEARTBEAT_MS = 1500;  // invio SYNC host → ospiti
+const TOG_BIG_JUMP    = 0.7;    // salto se drift grande
+const TOG_MICRO       = 0.1;    // micro correzione
+const TOG_RATE        = 0.03;   // 3% di speed drift
 
-function genCode(){
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I
-  let s=''; for(let i=0;i<8;i++) s += alphabet[Math.floor(Math.random()*alphabet.length)];
-  return s.slice(0,4)+'-'+s.slice(4);
+/*********************************
+ * Watch Together – State
+ *********************************/
+const tog = {
+  ws: null,
+  room: null,
+  isHost: false,
+  pingRTT: 0,
+  hb: 0,
+  members: new Set(),
+  bc: null,           // BroadcastChannel fallback (se WS_URL è vuoto)
+  suppress: false,    // evita loop quando applichiamo comandi remoti
+  inRoom(){ return !!this.room; }
+};
+
+/*********************************
+ * Watch Together – UI refs (già presenti)
+ *********************************/
+const togDialog  = document.getElementById('togDialog');
+const togCode    = document.getElementById('togCode');
+const togMake    = document.getElementById('togMake');
+const togLink    = document.getElementById('togLink');
+const togCopy    = document.getElementById('togCopy');
+const togJoinCode= document.getElementById('togJoinCode');
+const togJoin    = document.getElementById('togJoin');
+const togLeave   = document.getElementById('togLeave');
+const togStatus  = document.getElementById('togStatus');
+
+/*********************************
+ * Helpers
+ *********************************/
+
+function setActiveNav(btn){
+  document.querySelectorAll('.nav-center-box li').forEach(li => li.classList.remove('active'));
+  btn?.closest('li')?.classList.add('active');
+}
+function showHome(){
+  all.style.display = 'none';
+  watch.style.display = 'none';
+  home.style.display = 'block';
+  setActiveNav(navHomeBtn);
+}
+function showAll(){
+  home.style.display = 'none';
+  watch.style.display = 'none';
+  all.style.display = 'block';
+  setActiveNav(navAllBtn);
+  if (searchPanel?.classList.contains('show')) { // chiudi la lente se aperta
+    searchPanel.classList.remove('show');
+    searchPanel.setAttribute('aria-hidden','true');
+    searchFab.setAttribute('aria-expanded','false');
+  }
+}
+
+
+function randCode(){
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<8;i++) s += abc[Math.floor(Math.random()*abc.length)];
+  return s; // 8 chars senza trattino; il link usa ?room=s
 }
 function normCode(raw){
   if (!raw) return '';
-  const s = String(raw).toUpperCase().replace(/[^A-Z0-9]/g,'');
-  return (s.length<=4) ? s : s.slice(0,4)+'-'+s.slice(4,8);
+  return String(raw).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);
 }
-function codeToLink(code){
-  const c = (code||'').replace(/[^A-Z0-9]/g,'');
-  const base = location.origin + location.pathname.replace(/index\.html?$/,'');
-  return `${base}?room=${c}`;
+function syncLink(room){
+  const url = new URL(location.href);
+  url.searchParams.set('room', room);
+  if (current)   url.searchParams.set('series', current.id);
+  if (currentEp) url.searchParams.set('ep', String(currentEp));
+  return url.toString();
 }
-function showStatus(msg){ if(!elStatus) return; elStatus.textContent = msg; elStatus.style.display='block'; setTimeout(()=>{ elStatus.style.display='none'; }, 2500); }
+function setStatus(txt){
+  if (!togStatus) return;
+  togStatus.textContent = txt || '';
+  togStatus.style.display = txt ? 'inline' : 'none';
+}
+function setLeaveVisible(v){
+  if (togLeave) togLeave.style.display = v ? 'inline-flex' : 'none';
+}
 
-// ---- Input behavior (uppercase + formattazione ####-####)
-[elCode, elJoinCode].forEach(inp=>{
-  if(!inp) return;
-  inp.addEventListener('input', ()=>{
-    const pos = inp.selectionStart;
-    const before = inp.value;
-    inp.value = normCode(inp.value);
-    // tenta di mantenere il caret
-    const delta = inp.value.length - before.length;
-    inp.setSelectionRange(Math.max(0,pos+delta), Math.max(0,pos+delta));
+/*********************************
+ * Transport – WS + BroadcastChannel fallback
+ *********************************/
+function togSend(type, payload={}){
+  const msg = JSON.stringify({ type, room: tog.room, payload, ts: Date.now() });
+  if (tog.ws && tog.ws.readyState === 1) {
+    try{ tog.ws.send(msg); }catch{}
+  }
+  if (tog.bc){
+    try{ tog.bc.postMessage(msg); }catch{}
+  }
+}
+function connectWS(room){
+  disconnectWS();
+
+  tog.room = room;
+  // Fallback locale (multi-tab) se WS_URL non è configurato
+  if (!WS_URL){
+    tog.bc = new BroadcastChannel(`vichi_tog_${room}`);
+    tog.bc.onmessage = ev => { try{ togOnMessage(JSON.parse(ev.data)); }catch{} };
+    setStatus(`Stanza ${room} — (locale)`);
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject)=>{
+    const ws = new WebSocket(`${WS_URL}?room=${room}`);
+    tog.ws = ws;
+
+    ws.onopen = () => {
+      setStatus(`Connesso alla stanza ${room}`);
+      // chiedi benvenuto/stato
+      togSend('HELLO', {});
+      resolve();
+    };
+    ws.onmessage = (ev) => {
+      let msg=null; try{ msg = JSON.parse(ev.data); }catch{ return; }
+      togOnMessage(msg);
+    };
+    ws.onclose = () => {
+      clearInterval(tog.hb); tog.hb = 0;
+      setStatus('Disconnesso');
+    };
+    ws.onerror = (e) => {
+      setStatus('Errore connessione');
+      reject(e);
+    };
   });
+}
+function disconnectWS(){
+  try{ tog.ws?.close(); }catch{}
+  tog.ws = null;
+  if (tog.bc){ try{ tog.bc.close(); }catch{} tog.bc = null; }
+  clearInterval(tog.hb); tog.hb = 0;
+}
+
+/*********************************
+ * Host heartbeat (invio SYNC)
+ *********************************/
+function startHostHeartbeat(){
+  clearInterval(tog.hb);
+  tog.hb = setInterval(()=>{
+    if (!tog.isHost || !tog.inRoom()) return;
+    const state = video?.paused ? 'paused' : 'playing';
+    const t = Number(video?.currentTime || 0);
+    togSend('SYNC', { state, t, ts: Date.now() });
+  }, TOG_HEARTBEAT_MS);
+}
+
+/*********************************
+ * Message handler + drift correction
+ *********************************/
+function togOnMessage(msg){
+  const { type, payload, ts } = msg || {};
+  // evita loop locali
+  tog.suppress = true;
+  try {
+    switch(type){
+      case 'WELCOME': {
+        // payload: { host?:string }
+        setStatus(`Stanza ${tog.room} — host: ${tog.isHost ? 'TU' : (payload?.host || 'sconosciuto')}`);
+        break;
+      }
+      case 'MEMBERS': {
+        // payload: { ids: string[] }
+        tog.members = new Set(payload?.ids || []);
+        setStatus(`Stanza ${tog.room} — membri: ${tog.members.size}${tog.isHost ? ' (sei host)' : ''}`);
+        break;
+      }
+      case 'PING': {
+        togSend('PONG', { t: payload?.t });
+        break;
+      }
+      case 'SYNC': {
+        if (tog.isHost) break; // l'host non applica i propri SYNC
+        // correzione latenza grezza: hostT = payload.t + RTT/2
+        const hostT = (payload?.t ?? 0) + (((Date.now() - (payload?.ts || ts || Date.now()))/2)/1000);
+        applyHostState(payload?.state, hostT);
+        break;
+      }
+      case 'PLAY': {
+        if (tog.isHost) break;
+        video?.play().catch(()=>{});
+        break;
+      }
+      case 'PAUSE': {
+        if (tog.isHost) break;
+        try{ video?.pause(); }catch{}
+        break;
+      }
+      case 'SEEK': {
+        if (tog.isHost) break;
+        if (video && Number.isFinite(payload?.t)) video.currentTime = Math.max(0, payload.t);
+        break;
+      }
+      case 'CHANGE_EP': {
+        if (tog.isHost) break;
+        const { seriesId, ep } = payload || {};
+        const s = seriesList.find(x => x.id === seriesId);
+        if (s) {
+          if (!current || current.id !== s.id) openSeries(s);
+          playEpisode(s, Number(ep || 1));
+        }
+        break;
+      }
+      default: break;
+    }
+  } finally {
+    queueMicrotask(()=> { tog.suppress = false; });
+  }
+}
+
+function applyHostState(state, hostT){
+  if (!video) return;
+  const drift = hostT - Number(video.currentTime || 0);
+  if (Math.abs(drift) > TOG_BIG_JUMP){
+    video.currentTime = Math.max(0, hostT);
+    video.playbackRate = 1.0;
+  } else if (Math.abs(drift) > TOG_MICRO){
+    video.playbackRate = drift > 0 ? (1 + TOG_RATE) : (1 - TOG_RATE);
+  } else {
+    video.playbackRate = 1.0;
+  }
+  if (state === 'playing' && video.paused)         video.play().catch(()=>{});
+  if (state === 'paused'  && !video.paused)        { try{ video.pause(); }catch{} }
+}
+
+/*********************************
+ * Hook player → rete (solo host)
+ *********************************/
+video?.addEventListener('play',  ()=> { if (!tog.suppress && tog.isHost && tog.inRoom()) togSend('PLAY', {}); });
+video?.addEventListener('pause', ()=> { if (!tog.suppress && tog.isHost && tog.inRoom()) togSend('PAUSE',{}); });
+video?.addEventListener('seeking',()=>{ if (!tog.suppress && tog.isHost && tog.inRoom()) togSend('SEEK', { t: Number(video.currentTime||0) }); });
+video?.addEventListener('seeked', ()=>{ if (!tog.suppress && tog.isHost && tog.inRoom()) togSend('SEEK', { t: Number(video.currentTime||0) }); });
+
+/*********************************
+ * Wrappa playEpisodeCore per CHANGE_EP
+ *********************************/
+if (typeof playEpisodeCore === 'function'){
+  const _playEpisodeCore = playEpisodeCore;
+  window.playEpisodeCore = function(series, ep){
+    _playEpisodeCore(series, ep);
+    // annuncia cambio sorgente agli ospiti (solo host)
+    if (!tog.suppress && tog.isHost && tog.inRoom()){
+      togSend('CHANGE_EP', { seriesId: series?.id, ep: Number(ep||1) });
+      // mini-snapshot tempo per i join-late
+      const snap = ()=> togSend('SYNC', { state: (video?.paused ? 'paused' : 'playing'), t: Number(video?.currentTime||0), ts: Date.now() });
+      if (video?.readyState >= 2) snap(); else video?.addEventListener('canplay', snap, { once:true });
+    }
+  };
+}
+
+/*********************************
+ * UI: Crea / Entra / Lascia
+ *********************************/
+// Crea → host
+togMake?.addEventListener('click', async ()=>{
+  const code = normCode(togCode.value.trim()) || randCode();
+  togCode.value = code;
+  togLink.value = syncLink(code);
+
+  try{
+    await connectWS(code);
+    tog.isHost = true;
+    setLeaveVisible(true);
+    setStatus(`Stanza ${code} — sei host`);
+    startHostHeartbeat();
+  }catch{ setStatus('Impossibile connettersi'); }
 });
 
-// ---- Crea
-elMake?.addEventListener('click', ()=>{
-  const code = elCode.value.trim() ? normCode(elCode.value) : genCode();
-  elCode.value = code;
-  elLink.value = codeToLink(code);
-  showStatus('Stanza creata in locale. Condividi il link per invitare gli amici.');
+// Copia link
+togCopy?.addEventListener('click', async ()=>{
+  if (!togLink.value){ setStatus('Nessun link da copiare'); return; }
+  try{ await navigator.clipboard.writeText(togLink.value); setStatus('Link copiato'); }
+  catch{ setStatus('Copia non riuscita'); }
 });
 
-// ---- Copia link
-elCopy?.addEventListener('click', async ()=>{
-  if (!elLink.value) { showStatus('Nessun link da copiare.'); return; }
-  try{ await navigator.clipboard.writeText(elLink.value); showStatus('Link copiato negli appunti.'); }
-  catch{ showStatus('Copia non riuscita.'); }
-});
-
-// ---- Entra (placeholder: qui richiami la tua logica reale di join)
-elJoin?.addEventListener('click', ()=>{
-  const raw = elJoinCode.value.trim();
-  let code = normCode(raw);
-  // Se incollano un link completo, estrai ?room=
+// Entra → guest
+togJoin?.addEventListener('click', async ()=>{
+  const raw = togJoinCode.value.trim();
   const m = raw.match(/[?&]room=([A-Z0-9]+)/i);
-  if (m) code = normCode(m[1]);
-  if (!code || code.replace('-','').length<6){ showStatus('Codice non valido.'); return; }
+  const code = m ? normCode(m[1]) : normCode(raw);
+  if (!code || code.length < 6){ setStatus('Codice non valido'); return; }
 
-  // TODO: integrazione con il tuo backend/WebSocket
-  showStatus(`Entrando nella stanza ${code}…`);
-  elLeave.style.display = 'inline-flex';
+  try{
+    await connectWS(code);
+    tog.isHost = false;
+    setLeaveVisible(true);
+    setStatus(`Stanza ${code} — collegato come ospite`);
+  }catch{ setStatus('Impossibile connettersi'); }
 });
 
-// ---- Lascia
-elLeave?.addEventListener('click', ()=>{
-  // TODO: disconnessione reale
-  showStatus('Hai lasciato la stanza.');
-  elLeave.style.display = 'none';
+// Lascia
+togLeave?.addEventListener('click', ()=>{
+  disconnectWS();
+  setLeaveVisible(false);
+  tog.isHost = false;
+  tog.room = null;
+  setStatus('Hai lasciato la stanza');
 });
 
-// Quality of life: ENTER per attivare
-elCode?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); elMake?.click(); }});
-elJoinCode?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); elJoin?.click(); }});
-
+/*********************************
+ * Auto-join da link (?room=, opzionale series/ep)
+ *********************************/
+(function autoJoinFromURL(){
+  const url = new URL(location.href);
+  const r = normCode(url.searchParams.get('room') || '');
+  if (!r) return;
+  connectWS(r).then(()=>{
+    tog.isHost = false;
+    setLeaveVisible(true);
+    // opzionale: se arrivano series/ep dall'URL, apri subito
+    const seriesId = url.searchParams.get('series');
+    const ep = Number(url.searchParams.get('ep') || 0);
+    if (seriesId){
+      const s = seriesList.find(x => x.id === seriesId);
+      if (s) { openSeries(s); if (ep>0) playEpisode(s, ep); }
+    }
+  }).catch(()=> setStatus('Impossibile connettersi'));
+})();
 
 /* Utils/stato (immutati) */
 const isSeasonal = (series)=> Array.isArray(series?.seasons) && series.seasons.length>0;
@@ -468,6 +840,45 @@ function createCarouselRow({ id, title, items, size='default', showProgress=fals
   return row;
 }
 
+function renderAllGrid(items = seriesList){
+  if (!allGrid) return;
+  allGrid.innerHTML = '';
+  // Ordina alfabeticamente
+  const sorted = [...items].sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+  for (const s of sorted){
+    const card = document.createElement('article');
+    card.className = 'all-card';
+    card.dataset.id = s.id;
+    card.setAttribute('role','listitem');
+
+    card.onclick = (e)=> {
+    e.preventDefault();
+    openSeries(s, true);
+    };
+
+    const badges = document.createElement('div');
+    badges.className = 'all-badges';
+    const lang = s.lang || (Array.isArray(s.seasons) ? s.seasons[0]?.lang : '');
+    if (lang){ const b=document.createElement('span'); b.className='all-badge'; b.textContent=lang; badges.appendChild(b); }
+    card.appendChild(badges);
+
+    const img = document.createElement('img');
+    img.className = 'all-poster';
+    img.src = s.image || '';
+    img.alt = s.title;
+    img.onerror = ()=>{ img.src='data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="100%" height="100%" fill="#131318"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-family="Arial" font-size="22">${s.title}</text></svg>`); };
+    card.appendChild(img);
+
+    
+    allGrid.appendChild(card);
+    const ttl = document.createElement('div');
+    ttl.className = 'all-title-sm';
+    ttl.textContent = s.title;
+    card.appendChild(ttl);
+  }
+}
+
+
 function renderHome(options={}){
   const { query='' , results=null } = options;
   const homeCarousels = $('#homeCarousels');
@@ -500,10 +911,6 @@ function renderHome(options={}){
   const rowSub = createCarouselRow({ id:'row-sub', title:'Anime SUB-ITA', items: subIta });
   if (rowSub) homeCarousels.appendChild(rowSub);
 
-  const top = createCarouselRow({ id:'row-top', title:'In evidenza', items:seriesList.slice(0,15) });
-  const more = createCarouselRow({ id:'row-more', title:'Altri titoli', items:seriesList.slice(15) });
-  if (top) homeCarousels.appendChild(top);
-  if (more) homeCarousels.appendChild(more);
 }
 
 /* 🔎 filtering */
@@ -553,10 +960,54 @@ searchInput?.addEventListener('input', handleSearchInput, { passive:true });
 searchInput?.addEventListener('keydown', (e)=>{ if (e.key === 'Escape'){ searchInput.value=''; handleSearchInput(); searchInput.blur(); closeSearchPanel(); }});
 searchClear?.addEventListener('click', ()=>{ searchInput.value=''; handleSearchInput(); searchInput.focus(); });
 
+navHomeBtn?.addEventListener('click', (e)=>{ e.preventDefault(); showHome(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+navAllBtn?.addEventListener('click', (e)=>{ 
+  e.preventDefault(); 
+  renderAllGrid(); 
+  showAll(); 
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+
 /* ===== Watch / Player (immutati) ===== */
-function openSeries(series){ current = series; home.style.display = 'none'; watch.style.display = 'block';
-  watchBanner.src = (isSeasonal(series) && series.seasons[currentSeasIndex]?.image) || series.image || '';
-  watchTitle.textContent = series.title || 'Titolo'; buildSeasonPicker(series); renderEpisodeButtons(series); updateWatchResumeUI(series); }
+function openSeries(series, fromAll = false){
+  // Mostra la pagina watch
+  home.style.display = 'none';
+  all.style.display = 'none';
+  watch.style.display = 'block';
+  setActiveNav(null);
+
+  // Popola dati
+  currentSeries = series;
+  updateWatchHeader(series);
+  renderSeasons(series);
+
+  // Se apriamo da Tutti → scorri fino alla card selezionata
+  if(fromAll){
+    requestAnimationFrame(()=>{
+      const cardElem = document.querySelector(`[data-id="${series.id}"]`);
+      if(cardElem){
+        cardElem.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }
+}
+
+// --- FIX: wrapper mancanti --- //
+function updateWatchHeader(series){
+  // aggiorna banner e titolo (stesso lavoro che facevi in openSeries)
+  watchBanner.src = (isSeasonal(series) && series.seasons?.[currentSeasIndex]?.image) || series.image || '';
+  watchTitle.textContent = series.title || 'Titolo';
+}
+
+function renderSeasons(series){
+  // ricostruisce i controlli come già fai
+  buildSeasonPicker(series);
+  renderEpisodeButtons(series);
+  // aggiorna bottone "Riprendi"
+  updateWatchResumeUI(series);
+}
+// --- fine FIX --- //
 
 function buildSeasonPicker(series){
   seasonPicker.innerHTML = '';

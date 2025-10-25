@@ -28,10 +28,10 @@
       <nav>
         <ul>
           <li class="active"><a href="#" id="navHomeBtn">Home</a></li>
+          <li><a href="#" id="navAllBtn">Tutti</a></li>
           <li><a href="#" onclick="document.getElementById('togDialog').showModal();return false;">Guarda insieme</a></li>
         </ul>
       </nav>
-      <!-- (rimossa la searchbox dall'header) -->
     </div>
 
     <!-- SPAZIO DI SNAP SOTTO ELEMENTI D'ALTO -->
@@ -43,6 +43,13 @@
         <div id="searchStatus" class="search-status" aria-live="polite" style="display:none"></div>
       </div>
       <div id="homeCarousels" class="container"></div>
+    </section>
+
+    <section id="all" class="all" aria-label="Tutti gli anime" style="display:none">
+      <div class="container">
+        <h2 class="all-title">Tutti gli anime</h2>
+      <div id="allGrid" class="all-grid" role="list"></div>
+      </div>
     </section>
 
     <!-- WATCH-TOGETHER -->
@@ -163,7 +170,7 @@
 </div>
   
   <script>
-    window.VICHIFLIX_WS_URL = 'wss://vichiflix.onrender.com';
+    window.VICHIFLIX_WS_URL = 'wss://vichiflix.onrender.com/ws';
   </script>
   <script defer src="app.js"></script>
 </body>
