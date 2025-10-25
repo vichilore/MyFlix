@@ -1,0 +1,60 @@
+  { id:'onepiece', title:'One Piece (ITA)', poster:'https://i.imgur.com/TrSAzFm.jpeg', language:'ITA',
+    structure:{ kind:'continuous', total:900, numbering:'absolute' },
+    path:{ base:'https://serverfile.club/anime/onepiece/ita', folder:{ mode:'dynamic' }, file:{ pad:3 } }
+  },
+  { id:'onepiece-sub', title:'One Piece (SUB-ITA)', poster:'https://i.imgur.com/KVorMG3.jpeg', language:'SUB-ITA',
+    structure:{ kind:'continuous', total:1200, numbering:'absolute' },
+    path:{ base:'https://serverfile.club/anime/onepiece/subita', folder:{ mode:'dynamic' }, file:{ pad:3 } }
+  },
+  { id:'aot', title:'Attack on Titan (ITA)', poster:'https://i.imgur.com/OT7u7TG.jpeg', language:'ITA',
+    structure:{ kind:'seasonal', seasons:[25,12,22,30], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/attack-on-titan', langSegment:'ita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ prefix:'AOT', pad:2 }, seasonPad:2 }
+  },
+  { id:'aot-sub', title:'Attack on Titan (SUB-ITA)', poster:'https://i.imgur.com/nC8Io7P.jpeg', language:'SUB-ITA',
+    structure:{ kind:'seasonal', seasons:[25,12,22,30], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/attack-on-titan', langSegment:'subita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ prefix:'AOT', pad:2 }, seasonPad:2 }
+  },
+  { id:'blackclover-sub', title:'Black Clover (SUB-ITA)', poster:'https://i.imgur.com/oRnLN7S.jpeg', language:'SUB-ITA',
+    structure:{ kind:'continuous', total:170, numbering:'absolute' },
+    path:{ base:'https://serverfile.club/anime/black-clover/subita', folder:{ mode:'dynamic' }, file:{ pad:3 } }
+  },
+  { id:'hellsparadise-sub', title:"Hell's Paradise (SUB-ITA)", poster:'https://i.imgur.com/yb7QXmY.jpeg', language:'SUB-ITA',
+    structure:{ kind:'seasonal', seasons:[13], numbering:'perSeason' },
+    path:{ base:"https://serverfile.club/anime/hell-s-paradise", langSegment:'subita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:2 } }
+  },
+  { id:'chainsawman-sub', title:'Chainsaw Man (SUB-ITA)', poster:'https://i.imgur.com/sEVbCUY.jpeg', language:'SUB-ITA',
+    structure:{ kind:'seasonal', seasons:[12], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/chainsaw-man', langSegment:'subita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:3 }, omitS1Segment:true }
+  },
+  { id:'chainsawman', title:'Chainsaw Man (ITA)', poster:'https://i.imgur.com/cKGKfQq.jpeg', language:'ITA',
+    structure:{ kind:'seasonal', seasons:[12], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/chainsaw-man', langSegment:'ita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:3 }, omitS1Segment:true }
+  },
+  { id:'assassinationclassroom-sub', title:'Assassination Classroom (SUB-ITA)', poster:'https://i.imgur.com/pkXQMw9.jpeg', language:'SUB-ITA',
+    structure:{ kind:'seasonal', seasons:[22,25], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/assassination-classroom', langSegment:'subita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:2 } }
+  },
+  { id:'assassinationclassroom', title:'Assassination Classroom (ITA)', poster:'https://i.imgur.com/x6EIsQp.jpeg', language:'ITA',
+    structure:{ kind:'seasonal', seasons:[22,25], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/assassination-classroom', langSegment:'ita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:2 } }
+  },
+  { id:'bleach-sub', title:'Bleach (SUB-ITA)', poster:'https://i.imgur.com/Pi5uEyd.jpeg', language:'SUB-ITA',
+    structure:{ kind:'continuous', total:366, numbering:'absolute' },
+    path:{ base:'https://serverfile.club/anime/bleach/subita', folder:{ mode:'dynamic' }, file:{ pad:3 } }
+  },
+  { id:'bleach', title:'Bleach (ITA)', poster:'https://i.imgur.com/nTw3flE.jpeg', language:'ITA',
+    structure:{ kind:'continuous', total:366, numbering:'absolute' },
+    path:{ base:'https://serverfile.club/anime/bleach/ita', folder:{ mode:'dynamic' }, file:{ pad:3 } }
+  },
+  { id:'deathnote', title:'Death Note (ITA)', poster:'https://i.imgur.com/YGSr7ua.jpeg', language:'ITA',
+    structure:{ kind:'seasonal', seasons:[37], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/death-note', langSegment:'ita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ prefix:'D', pad:2 }, omitS1Segment:true }
+  },
+  { id:'dandadan-sub', title:'Dandadan (SUB-ITA)', poster:'https://i.imgur.com/doXwRWH.jpeg', language:'SUB-ITA',
+    structure:{ kind:'seasonal', seasons:[12,12], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/dandadan', langSegment:'subita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:2 }, omitS1Segment:true }
+  },
+  { id:'dandadan', title:'Dandadan (ITA)', poster:'https://i.imgur.com/pMzKPs8.jpeg', language:'ITA',
+    structure:{ kind:'seasonal', seasons:[12,12], numbering:'perSeason' },
+    path:{ base:'https://serverfile.club/anime/dandadan', langSegment:'ita', folder:{ mode:'fixed', fixed:'001_100' }, file:{ pad:2 }, omitS1Segment:true }
+  }
