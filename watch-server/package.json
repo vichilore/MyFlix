@@ -1,17 +1,19 @@
 {
-  "name": "watch-server",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "vichiflix-ws",
+  "private": true,
   "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
+  "main": "server.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "ws": "^8.18.3"
-  }
+  "description": ""
 }

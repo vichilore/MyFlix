@@ -29,7 +29,7 @@
         <ul>
           <li class="active"><a href="#" id="navHomeBtn">Home</a></li>
           <li><a href="#" id="navAllBtn">Tutti</a></li>
-          <li><a href="#" onclick="document.getElementById('togDialog').showModal();return false;">Guarda insieme</a></li>
+          <li><a href="#" id="wtHomeBar">Guarda Insieme</a></li>
         </ul>
       </nav>
     </div>
@@ -45,72 +45,12 @@
       <div id="homeCarousels" class="container"></div>
     </section>
 
+    <!-- TUTTI -->
     <section id="all" class="all" aria-label="Tutti gli anime" style="display:none">
       <div class="container">
         <h2 class="all-title">Tutti gli anime</h2>
-      <div id="allGrid" class="all-grid" role="list"></div>
+        <div id="allGrid" class="all-grid" role="list"></div>
       </div>
-    </section>
-
-    <!-- WATCH-TOGETHER -->
-    <section class="together" aria-label="Guarda insieme">
-      <div class="tog-row"><!-- (placeholder: nulla qui) --></div>
-
-      <dialog id="togDialog">
-<form method="dialog" class="tog-form">
-  <header class="tog-head">
-    <div class="tog-icon">👥</div>
-    <div>
-      <h3>Guarda insieme</h3>
-      <p class="muted">Crea una stanza o entra con un codice/link condiviso.</p>
-    </div>
-  </header>
-
-  <div class="tog-grid">
-    <!-- CREA STANZA -->
-    <section class="tog-card">
-      <h4>Crea stanza</h4>
-      <div class="tog-field">
-        <label class="lbl">Codice stanza</label>
-        <div class="row">
-          <input id="togCode" class="inp code" type="text" maxlength="9" placeholder="ABCD-1234" />
-          <button id="togMake" class="btn primary" type="button">Crea</button>
-        </div>
-        <small class="help">Il codice viene generato automaticamente oppure modificalo tu (A-Z, 0-9).</small>
-      </div>
-
-      <div class="tog-field">
-        <label class="lbl">Link stanza</label>
-        <div class="row">
-          <input id="togLink" class="inp mono" type="text" readonly placeholder="Link stanza" />
-          <button id="togCopy" class="btn" type="button">Copia link</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ENTRA -->
-    <section class="tog-card">
-      <h4>Entra in stanza</h4>
-      <div class="tog-field">
-        <label class="lbl">Inserisci codice</label>
-        <div class="row">
-          <input id="togJoinCode" class="inp code" type="text" maxlength="9" placeholder="ABCD-1234" />
-          <button id="togJoin" class="btn" type="button">Entra</button>
-        </div>
-        <small class="help">Oppure incolla un link completo.</small>
-      </div>
-    </section>
-  </div>
-
-  <footer class="tog-foot">
-    <div class="tog-  status" id="togStatus" role="status" aria-live="polite" style="display:none"></div>
-    <div class="tog-actions">
-      <button id="togLeave" class="btn danger" type="button" style="display:none">Lascia stanza</button>
-      <button class="btn" value="cancel">Chiudi</button>
-    </div>
-  </footer>
-</form>
-      </dialog>
     </section>
 
     <!-- WATCH (hero + stagioni + episodi) -->
@@ -155,23 +95,21 @@
     </div>
   </div>
 
-<button id="searchFab" class="search-ico" type="button" aria-label="Apri ricerca" title="Cerca" aria-expanded="false">
-  <!-- tua icona SVG -->
-  <svg viewBox="0 0 250 250" width="100%" height="100%" aria-hidden="true">
-    <circle cx="104" cy="104" r="72" stroke="currentColor" stroke-width="24" fill="none"/>
-    <line x1="160" y1="160" x2="228" y2="228" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>
-  </svg>
-</button>
+  <!-- 🔎 FAB Ricerca -->
+  <button id="searchFab" class="search-ico" type="button" aria-label="Apri ricerca" title="Cerca" aria-expanded="false">
+    <svg viewBox="0 0 250 250" width="100%" height="100%" aria-hidden="true">
+      <circle cx="104" cy="104" r="72" stroke="currentColor" stroke-width="24" fill="none"/>
+      <line x1="160" y1="160" x2="228" y2="228" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>
+    </svg>
+  </button>
 
-<!-- Pannello ricerca (già usato prima) -->
-<div id="searchPanel" class="search-panel" role="search" aria-hidden="true">
-  <input id="searchInput" class="search-inp" type="search" autocomplete="off" placeholder="Cerca anime… (titolo o lingua)" aria-label="Cerca" />
-  <button id="searchClear" class="search-clear" type="button" aria-label="Pulisci ricerca">✕</button>
-</div>
-  
-  <script>
-    window.VICHIFLIX_WS_URL = 'wss://vichiflix.onrender.com/ws';
-  </script>
-  <script defer src="app.js"></script>
+  <!-- Pannello ricerca -->
+  <div id="searchPanel" class="search-panel" role="search" aria-hidden="true">
+    <input id="searchInput" class="search-inp" type="search" autocomplete="off" placeholder="Cerca anime… (titolo o lingua)" aria-label="Cerca" />
+    <button id="searchClear" class="search-clear" type="button" aria-label="Pulisci ricerca">✕</button>
+  </div>
+
+  <!-- JS -->
+  <script type="module" defer src="app.js"></script>
 </body>
 </html>
