@@ -1023,6 +1023,9 @@ class Player {
 
   // manda lo stato iniziale dopo un attimo, così il video ha avuto tempo di partire
   setTimeout(() => WatchTogether.broadcastState(), 400);
+  if (WatchTogether.roomId) {
+  WatchTogether.notifyEpisodeChange();
+  }
 }
   }
   
@@ -1402,36 +1405,39 @@ class WatchTogether {
 
   // Chiamata quando riceviamo stato remoto O quando qualcuno entra e il server ci manda sync
   static handleSyncState(state) {
-    // stessa logica che avevi già:
-    // - se l'altro utente sta guardando un episodio diverso, apriamo quella serie/episodio
-    // - poi allineiamo tempo/pausa
-    const sId = state?.seriesId;
-    const ep = Number(state?.ep || 0);
+  const sId = state?.seriesId;
+  const hasEp = state?.ep !== undefined && state?.ep !== null;
+  const ep = hasEp ? Number(state.ep) : null;
 
-    if (sId && ep) {
-      // cerca la serie nel catalogo
-      const s = SeriesHelper.findById(sId);
-      if (s) {
-        const needSwitchSeries = !Player.currentSeries || Player.currentSeries.id !== sId;
-        const needSwitchEp = Player.currentEp !== ep;
-        if (needSwitchSeries || needSwitchEp) {
-          this.suppressBroadcast = true;
-          try {
-            // apri pagina serie e poi riproduci quell'episodio
-            WatchPage.open(s);
-            setTimeout(() => Player.play(s, ep), 50);
-          } finally {
-            // dopo aver caricato il video, sincronizza tempo/pausa
-            setTimeout(() => this.applyRemoteState(state), 250);
-          }
-          return;
+  // se ho info su serie+episodio, posso forzare l'apertura di quell'episodio
+  if (sId && hasEp) {
+    const s = SeriesHelper.findById(sId);
+    if (s) {
+      const needSwitchSeries = !Player.currentSeries || Player.currentSeries.id !== sId;
+      const needSwitchEp     = Player.currentEp !== ep;
+
+      if (needSwitchSeries || needSwitchEp) {
+        this.suppressBroadcast = true;
+        try {
+          // Apri la pagina della serie sul follower
+          WatchPage.open(s);
+
+          // Fai partire l'episodio giusto sul follower
+          setTimeout(() => Player.play(s, ep), 50);
+        } finally {
+          // Dopo aver caricato il video, allinea tempo e play/pause
+          setTimeout(() => this.applyRemoteState(state), 250);
         }
+        return;
       }
     }
-
-    // se stessa serie/ep oppure non c'è ep -> solo sync play/pause/time
-    this.applyRemoteState(state);
   }
+
+  // Se siamo già sulla stessa serie/ep, o non abbiamo ep chiaro,
+  // limitiamoci a syncare play/pause/time
+  this.applyRemoteState(state);
+}
+
 
   static applyRemoteState(state) {
     const video = $('#video');
@@ -1459,6 +1465,25 @@ class WatchTogether {
       setTimeout(() => { this.suppressBroadcast = false; }, 120);
     }
   }
+
+  // Chiamala subito dopo aver cambiato episodio localmente.
+// Serve ad annunciare "ragazzi ora guardiamo questo ep".
+  static notifyEpisodeChange() {
+    if (!this.roomId) return;
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+    // piccolo delay per dare tempo a Player.play() di:
+    // - aggiornare Player.currentSeries / Player.currentEp
+    // - settare video.src
+    // così quando broadcastiamo, lo stato è già consistente
+    setTimeout(() => {
+      // importante: permettiamo il broadcast qui (non stiamo applicando stato remoto)
+      this.suppressBroadcast = false;
+      this.broadcastState();
+    }, 200);
+  }
+
+
 
   // Chiamata ogni volta che il tuo player locale cambia (play/pause/seek/timeupdate iniziale)
   static broadcastState() {
