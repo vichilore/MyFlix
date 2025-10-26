@@ -1020,12 +1020,11 @@ class Player {
     if (WatchTogether.roomId) {
   // assicura che siamo connessi e dentro alla stanza
   WatchTogether.joinRoom(WatchTogether.roomId);
-
+  
+  WatchTogether.notifyEpisodeChange();
   // manda lo stato iniziale dopo un attimo, così il video ha avuto tempo di partire
   setTimeout(() => WatchTogether.broadcastState(), 400);
-  if (WatchTogether.roomId) {
-  WatchTogether.notifyEpisodeChange();
-  }
+  
 }
   }
   
@@ -1471,6 +1470,8 @@ class WatchTogether {
   static notifyEpisodeChange() {
     if (!this.roomId) return;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+    if(this.suppressBroadcast)
 
     // piccolo delay per dare tempo a Player.play() di:
     // - aggiornare Player.currentSeries / Player.currentEp
