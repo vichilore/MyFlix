@@ -1,8 +1,6 @@
-// server.js
 import { WebSocketServer } from 'ws';
 import http from 'http';
 
-// mappa roomId -> { state, clients:Set<ws> }
 const rooms = new Map();
 
 function joinRoom(ws, roomId) {
@@ -11,7 +9,6 @@ function joinRoom(ws, roomId) {
   }
   const room = rooms.get(roomId);
 
-  // rimuovi dal gruppo precedente, se serve
   if (ws._roomId && rooms.has(ws._roomId)) {
     rooms.get(ws._roomId).clients.delete(ws);
   }
@@ -19,7 +16,6 @@ function joinRoom(ws, roomId) {
   ws._roomId = roomId;
   room.clients.add(ws);
 
-  // manda stato corrente al nuovo arrivato
   if (room.state) {
     ws.send(JSON.stringify({
       type: 'sync-state',
@@ -32,7 +28,7 @@ function broadcastState(ws, roomId, newState) {
   const room = rooms.get(roomId);
   if (!room) return;
 
-  room.state = newState; // salva ultimo stato della stanza
+  room.state = newState;
 
   for (const client of room.clients) {
     if (client !== ws && client.readyState === client.OPEN) {
@@ -44,16 +40,15 @@ function broadcastState(ws, roomId, newState) {
   }
 }
 
-// 1. Creiamo un http.Server singolo
 const server = http.createServer((req, res) => {
-  // opzionale: healthcheck / debug
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('WatchTogether WS up\n');
 });
 
-// 2. Agganciamo WebSocketServer allo stesso server HTTP
-//    e usiamo un path dedicato /watch
-const wss = new WebSocketServer({ server, path: '/watch' });
+const wss = new WebSocketServer({
+  server,
+  path: '/watch'
+});
 
 wss.on('connection', (ws) => {
   ws.isAlive = true;
@@ -75,7 +70,6 @@ wss.on('connection', (ws) => {
         }
         break;
       }
-
       case 'update-state': {
         if (msg.roomId && typeof msg.state === 'object') {
           broadcastState(ws, msg.roomId, msg.state);
@@ -90,13 +84,13 @@ wss.on('connection', (ws) => {
       const room = rooms.get(ws._roomId);
       room.clients.delete(ws);
       if (room.clients.size === 0) {
-        rooms.delete(ws._roomId); // stanza vuota, la puliamo
+        rooms.delete(ws._roomId);
       }
     }
   });
 });
 
-// heartbeat per killare connessioni zombie (Render può tenerle aperte finché "vive" il container)
+// heartbeat anti-zombie
 setInterval(() => {
   wss.clients.forEach(ws => {
     if (!ws.isAlive) return ws.terminate();
@@ -105,7 +99,7 @@ setInterval(() => {
   });
 }, 30000);
 
-// 3. Porta: Render ti dà PORT (default 10000). Devi ascoltare su 0.0.0.0
+// 🚨 QUESTA PARTE È CRITICA PER RENDER 🚨
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
   console.log('WS server listening on', PORT);
