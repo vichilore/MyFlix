@@ -362,7 +362,7 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .season-picker{ display:flex; gap:8px; flex-wrap:wrap; }
 .season-pill{
   background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
-  border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:700;
+  border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:700; color: #fff
 }
 .season-pill.active{ background:linear-gradient(180deg, var(--accent), #ba0015); border-color:#ff6b6b; color:#fff; }
 
@@ -495,4 +495,147 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 @keyframes focusPulse{
   0%{ transform: scale(1.05); }
   100%{ transform: scale(1); }
+}
+
+
+/* ===== WATCH TOGETHER LOBBY ===== */
+.wt { color:#fff; padding-bottom:60px; }
+.wt-layout { max-width:600px; margin:40px auto 0; }
+
+.wt-card{
+  background: var(--card);
+  border:1px solid var(--stroke);
+  border-radius:16px;
+  padding:20px 20px 24px;
+  box-shadow: var(--shadow);
+}
+
+.wt-title{
+  font-size:1.4rem;
+  font-weight:800;
+  margin:0 0 4px;
+}
+.wt-desc{
+  margin:0 0 20px;
+  font-size:.9rem;
+  color:var(--muted);
+  line-height:1.4;
+}
+
+.wt-block{
+  margin-bottom:20px;
+}
+.wt-label{
+  font-size:.8rem;
+  font-weight:700;
+  color:#fff;
+  margin-bottom:6px;
+  display:block;
+}
+.wt-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:nowrap;
+}
+
+.wt-sep{
+  text-align:center;
+  font-size:.75rem;
+  color:var(--muted);
+  margin:12px 0 20px;
+  position:relative;
+}
+.wt-sep span{
+  background:var(--card);
+  padding:0 8px;
+  position:relative;
+  z-index:1;
+}
+.wt-sep::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; top:50%;
+  height:1px;
+  background:rgba(255,255,255,0.1);
+  z-index:0;
+}
+
+.wt-room-info{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--stroke);
+  background:rgba(255,255,255,.03);
+}
+.wt-room-main{
+  min-width:0;
+}
+.wt-room-label{
+  font-size:.7rem;
+  font-weight:700;
+  color:var(--muted);
+  margin-bottom:4px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.wt-room-code{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:8px;
+  padding:6px 10px;
+  font-size:1rem;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:#fff;
+}
+
+.wt-users{
+  list-style:none;
+  padding:8px 12px;
+  margin:8px 0 0;
+  border-radius:10px;
+  border:1px solid var(--stroke);
+  background:rgba(255,255,255,.03);
+  font-size:.9rem;
+  line-height:1.4;
+  max-height:120px;
+  overflow:auto;
+}
+.wt-users li{
+  padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.wt-users li:last-child{
+  border-bottom:none;
+}
+
+.wt-role-badge{
+  display:inline-block;
+  font-size:.8rem;
+  font-weight:700;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  margin-bottom:6px;
+}
+.wt-hint{
+  margin:0;
+  font-size:.75rem;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+.wt-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:flex-end;
+  margin-top:20px;
 }

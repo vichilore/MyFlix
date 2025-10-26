@@ -1,19 +1,11 @@
 {
-  "name": "vichiflix-ws",
-  "private": true,
-  "type": "module",
+  "name": "watch-together-ws",
   "version": "1.0.0",
-  "dependencies": {
-    "express": "^5.1.0",
-    "socket.io": "^4.8.1",
-    "ws": "^8.18.0"
-  },
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
-  "main": "server.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
 }
