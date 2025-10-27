@@ -13,6 +13,37 @@ console.log("DATABASE_URL from .env:", process.env.DATABASE_URL);
 
 const app = express();
 
+const allowedOrigins = [
+  "https://lorenzovichi.it",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://localhost:8080" // utile se fai test da Postman / curl ecc
+];
+
+
+// middleware CORS
+app.use(cors({
+  origin: function(origin, callback) {
+    // origin = dominio della pagina che sta chiamando l'API
+    // se viene da curl / Postman può essere undefined -> permettiamolo
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // non è nella whitelist
+    console.warn("Bloccato CORS da origin:", origin);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET","POST","PATCH","OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// per sicurezza gestiamo anche OPTIONS generiche
+app.options("*", cors());
+
 // ⚠️ IN PRODUZIONE metteremo origin: ["https://iltuodominio"]
 app.use(cors());
 app.use(express.json());
