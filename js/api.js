@@ -3,7 +3,7 @@
 
 const API = (() => {
 
-    const FALLBACK_URL = "https://itanime.onrender.com";
+    const FALLBACK_URL = "https://itanime-api.onrender.com";
     
   // Invece di fissare BASE_URL una volta sola, lo calcoliamo ogni volta.
   function getBaseUrl() {
