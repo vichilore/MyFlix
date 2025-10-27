@@ -7,48 +7,56 @@ import pkg from "pg";
 dotenv.config();
 const { Pool } = pkg;
 
+// DB pool (Supabase/Postgres)
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
 });
 
+// crea app express
 const app = express();
 
 /**
  * CORS CONFIG
- * consenti solo i domini che devono poter parlare con l'API
- * IMPORTANTISSIMO: metti qui esattamente il dominio pubblico da cui carichi il frontend,
- * tipo https://lorenzovichi.it
+ *
+ * Qui diciamo ESPLICITAMENTE:
+ * - accetta richieste solo da https://lorenzovichi.it (il tuo sito live)
+ * - accetta anche localhost per sviluppo
+ *
+ * IMPORTANTISSIMO: deve partire PRIMA delle route.
  */
-const allowedOrigins = [
+
+const allowedOrigins = new Set([
   "https://lorenzovichi.it",
   "http://localhost:5500",
-  "http://127.0.0.1:5500"
-];
+  "http://127.0.0.1:5500",
+  "http://localhost:8080"
+]);
 
-// middleware CORS
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // curl/postman non mandano origin -> li lasciamo passare
-      if (!origin) return callback(null, true);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+  if (origin && allowedOrigins.has(origin)) {
+    // diamo il permesso esplicito a quell'origine
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
 
-      console.warn("CORS blocked origin:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+  // sempre permettere questi header/metodi perché il browser li chiede nel preflight
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
 
-// gestisce le richieste preflight OPTIONS
-app.options("*", cors());
+  // gestiamo noi l'OPTIONS di preflight
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204); // rispondi senza errore e SENZA passare oltre
+  }
 
+  next();
+});
+
+// body parser JSON
 app.use(express.json());
+
 
 
 // Utility: crea JWT firmato
