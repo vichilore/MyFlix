@@ -7,16 +7,8 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- LOCKSCREEN -->
-  <div id="lockscreen">
-    <h2>Area riservata<br />Inserisci la password</h2>
-    <input type="password" id="passInput" placeholder="Password" />
-    <button id="passBtn">Entra</button>
-    <button id="devBypassBtn" style="display:none;margin-top:8px">Bypass (dev)</button>
-  </div>
 
-  <!-- APP -->
-  <div class="app" style="display:none">
+  <div class="app">
     <!-- HEADER -->
     <header class="main-header">
       <div class="brand" id="brandLogo">
@@ -69,80 +61,77 @@
       </div>
     </section>
 
+    <!-- WATCH TOGETHER -->
+    <section id="wt" class="wt" aria-label="Guarda Insieme" style="display:none">
+      <div class="container wt-layout">
+        <div class="wt-card">
+          <h2 class="wt-title">Guarda Insieme</h2>
+          <p class="wt-desc">Sincronizza il player con gli amici in tempo reale.</p>
 
-<!-- WATCH TOGETHER -->
-<section id="wt" class="wt" aria-label="Guarda Insieme" style="display:none">
-  <div class="container wt-layout">
-    <div class="wt-card">
-      <h2 class="wt-title">Guarda Insieme</h2>
-      <p class="wt-desc">Sincronizza il player con gli amici in tempo reale.</p>
+          <!-- STEP 1: non sono in stanza -->
+          <div id="wtNotInRoom" class="wt-step">
+            <div class="wt-block">
+              <label class="wt-label">Entra in una stanza esistente</label>
+              <div class="wt-row">
+                <input
+                  id="wtJoinCode"
+                  class="inp code"
+                  placeholder="WT-ABC12"
+                  maxlength="16"
+                  autocomplete="off"
+                />
+                <button id="wtJoinBtn" class="btn primary" type="button">Entra</button>
+              </div>
+            </div>
 
-      <!-- STEP 1: non sono in nessuna stanza -->
-      <div id="wtNotInRoom" class="wt-step">
-        <div class="wt-block">
-          <label class="wt-label">Entra in una stanza esistente</label>
-          <div class="wt-row">
-            <input
-              id="wtJoinCode"
-              class="inp code"
-              placeholder="WT-ABC12"
-              maxlength="16"
-              autocomplete="off"
-            />
-            <button id="wtJoinBtn" class="btn primary" type="button">Entra</button>
+            <div class="wt-sep"><span>oppure</span></div>
+
+            <div class="wt-block">
+              <button id="wtCreateBtn" class="btn danger" type="button">
+                + Crea nuova stanza
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 2: dentro la stanza -->
+          <div id="wtInRoom" class="wt-step" style="display:none">
+            <div class="wt-room-info">
+              <div class="wt-room-main">
+                <div class="wt-room-label">Codice stanza</div>
+                <div class="wt-room-code" id="wtRoomCode">WT-XXXXX</div>
+              </div>
+              <button id="wtCopyBtn" class="btn" type="button">Copia link invito</button>
+            </div>
+
+            <div class="wt-block">
+              <div class="wt-room-label">Partecipanti</div>
+              <ul id="wtUsers" class="wt-users">
+                <!-- riempito via JS -->
+              </ul>
+            </div>
+
+            <div class="wt-block">
+              <div class="wt-room-label">Ruolo</div>
+              <div id="wtRoleBadge" class="wt-role-badge">viewer</div>
+              <p class="wt-hint">
+                Solo l'host controlla play/pausa/seek. Gli altri vengono sincronizzati.
+              </p>
+            </div>
+
+            <div class="wt-actions">
+              <button id="wtGoWatchBtn" class="btn primary" type="button">
+                Vai al catalogo
+              </button>
+              <button id="wtLeaveBtn" class="btn" type="button">
+                Esci dalla stanza
+              </button>
+            </div>
           </div>
         </div>
-
-        <div class="wt-sep"><span>oppure</span></div>
-
-        <div class="wt-block">
-          <button id="wtCreateBtn" class="btn danger" type="button">
-            + Crea nuova stanza
-          </button>
-        </div>
       </div>
+    </section>
 
-      <!-- STEP 2: sono dentro una stanza -->
-      <div id="wtInRoom" class="wt-step" style="display:none">
-        <div class="wt-room-info">
-          <div class="wt-room-main">
-            <div class="wt-room-label">Codice stanza</div>
-            <div class="wt-room-code" id="wtRoomCode">WT-XXXXX</div>
-          </div>
-          <button id="wtCopyBtn" class="btn" type="button">Copia link invito</button>
-        </div>
-
-        <div class="wt-block">
-          <div class="wt-room-label">Partecipanti</div>
-          <ul id="wtUsers" class="wt-users">
-            <!-- li dinamici -->
-          </ul>
-        </div>
-
-        <div class="wt-block">
-          <div class="wt-room-label">Ruolo</div>
-          <div id="wtRoleBadge" class="wt-role-badge">viewer</div>
-          <p class="wt-hint">
-            Solo l'host controlla play/pausa/seek. Gli altri vengono sincronizzati.
-          </p>
-        </div>
-
-        <div class="wt-actions">
-          <button id="wtGoWatchBtn" class="btn primary" type="button">
-            Vai al catalogo
-          </button>
-          <button id="wtLeaveBtn" class="btn" type="button">
-            Esci dalla stanza
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-
-    <!-- PLAYER -->
+    <!-- PLAYER OVERLAY -->
     <div id="playerOverlay" class="player-overlay" style="display:none">
       <div class="player-shell">
         <div class="player-bar">
@@ -178,6 +167,61 @@
     <button id="searchClear" class="search-clear" type="button">✕</button>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="auth-modal-backdrop" style="display:none">
+    <div class="auth-modal-card">
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" data-tab="login">Login</button>
+        <button class="auth-tab-btn" data-tab="signup">Signup</button>
+      </div>
+
+      <!-- LOGIN PANEL -->
+      <div class="auth-panel" data-panel="login">
+        <label>Username</label>
+        <input id="login_username" placeholder="es. lorenzo" />
+        <label>PIN</label>
+        <input id="login_pin" type="password" placeholder="4-6 cifre" />
+        <button id="login_btn" class="auth-primary-btn">Entra</button>
+        <div id="login_error" class="auth-error"></div>
+      </div>
+
+      <!-- SIGNUP PANEL -->
+      <div class="auth-panel" data-panel="signup" style="display:none;">
+        <label>Username</label>
+        <input id="signup_username" placeholder="es. lorenzo2" />
+        <label>PIN (4-6 cifre)</label>
+        <input id="signup_pin" type="password" placeholder="1234" />
+        <label>Avatar URL (opzionale)</label>
+        <input id="signup_avatar" placeholder="https://i.imgur.com/qualcosa.png" />
+        <button id="signup_btn" class="auth-primary-btn">Crea account</button>
+        <div id="signup_error" class="auth-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================== SCRIPT ORDER ================== -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+
+  <script src="js/urlParser.js"></script>
+  <script src="js/catalog.js"></script>
+
+  <script src="js/progress.js"></script>
+  <script src="js/seriesHelper.js"></script>
+
+  <script src="js/ui-manager.js"></script>
+  <script src="js/carousel.js"></script>
+  <script src="js/homePage.js"></script>
+  <script src="js/allPage.js"></script>
+  <script src="js/watchPage.js"></script>
+  <script src="js/player.js"></script>
+
+  <script src="js/search.js"></script>
+  <script src="js/watchTogether.js"></script>
+  <script src="js/dockMetrics.js"></script>
+  <script src="js/ui-authmodal.js"></script>
+
+  <script src="js/main.js"></script>
 </body>
 </html>

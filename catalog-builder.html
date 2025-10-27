@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VichiFlix Catalog Builder</title>
+  <style>
+    :root {
+      --bg:#0f1016;
+      --panel:#1a1c27;
+      --stroke:#2b2f3f;
+      --txt:#fff;
+      --sub:#8b90a8;
+      --accent:#ff3366;
+      --radius:12px;
+      --gap:12px;
+      --font:system-ui,-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:var(--font);}
+    body{background:var(--bg);color:var(--txt);padding:24px 16px 120px;line-height:1.4;}
+
+    h1{font-size:1.3rem;font-weight:700;margin-bottom:4px;color:var(--txt);} 
+    .subtitle{font-size:.8rem;color:var(--sub);margin-bottom:24px;}
+
+    h2{font-size:1rem;font-weight:600;margin-bottom:4px;color:var(--txt);} 
+    h3{font-size:.8rem;font-weight:600;margin-bottom:4px;color:var(--txt);} 
+    .section-desc{font-size:.75rem;color:var(--sub);margin-bottom:12px;line-height:1.4;}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:24px;
+      max-width:1200px;
+      margin:0 auto;
+    }
+
+    @media(min-width:1024px){
+      .grid{grid-template-columns:repeat(3,1fr);}  /* 3 colonne: auto / range / seasonal */
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:0 24px 60px rgba(0,0,0,.6);
+      display:flex;
+      flex-direction:column;
+      min-height:400px;
+    }
+
+    .row{display:flex;flex-wrap:wrap;gap:var(--gap);margin-bottom:12px;}
+    .row.inline > *{flex:1 1 120px;}
+    .row.full > *{flex:1 1 100%;}
+    label{font-size:.7rem;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;}
+    input,textarea{width:100%;background:#0f1016;border:1px solid var(--stroke);border-radius:8px;padding:8px 10px;font-size:.8rem;line-height:1.3;color:var(--txt);}
+    input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent);}    
+    textarea{min-height:60px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
+    .small-row{border:1px solid var(--stroke);border-radius:10px;padding:12px;margin-bottom:12px;background:#10121b;position:relative;}
+    .small-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .small-title{font-size:.8rem;font-weight:600;color:var(--txt);}    
+
+    button{cursor:pointer;appearance:none;border:0;line-height:1.2;border-radius:8px;font-size:.8rem;font-weight:600;padding:8px 10px;background:#2b2f3f;color:var(--txt);}
+    button.primary{background:var(--accent);color:#fff;}
+    button.outline{background:transparent;border:1px solid var(--stroke);color:var(--txt);}    
+    button.danger{background:#3a1b25;color:#ff7a9e;border:1px solid #ff3366;}    
+
+    .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+
+    .output-panel{
+      max-width:1200px;
+      margin:32px auto 0;
+      background:#141623;
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:0 24px 60px rgba(0,0,0,.6);
+      padding:16px;
+    }
+    .output-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;}
+    .output-head-left{min-width:0;}
+    .output-title{font-size:.9rem;font-weight:600;color:#fff;margin-bottom:4px;}
+    .output-desc{font-size:.7rem;color:var(--sub);line-height:1.4;}
+    #finalOutput{width:100%;min-height:220px;background:#0f1016;border:1px solid var(--stroke);border-radius:10px;padding:12px;font-size:.75rem;line-height:1.4;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--txt);resize:vertical;white-space:pre;font-variant-ligatures:none;}
+
+    .remove-btn{font-size:.7rem;padding:4px 8px;border-radius:6px;background:#2b2f3f;border:1px solid var(--stroke);color:var(--sub);}    
+  </style>
+</head>
+<body>
+  <header style="max-width:1200px;margin:0 auto 24px;">
+    <h1>VichiFlix Catalog Builder</h1>
+    <div class="subtitle">Compila uno dei moduli qui sotto → clicca "Aggiungi al catalogo" → in basso ottieni CODICE JS pronto da incollare dentro l’array CATALOG in app.js (usa UrlParser.quickAddSeries / UrlParser.quickAddSeason).</div>
+  </header>
+
+  <main class="grid">
+
+    <!-- ===================== TIPO 1: AUTO (senza stagioni, un solo link base) ===================== -->
+    <section class="panel" id="autoPanel">
+      <h2>Serie semplice <span style="color:var(--accent);">(generator: "auto")</span></h2>
+      <div class="section-desc">Per serie lineari, stesso server per tutti gli episodi. Esempio: Black Clover, Hunter x Hunter.<br>Mi dai l'URL di un episodio (di solito Ep 01), io faccio la quickAddSeries.</div>
+
+      <div class="row full">
+        <div style="flex:1 1 100%;">
+          <label for="auto_id">ID interno (opzionale)</label>
+          <input id="auto_id" placeholder="es. blackclover-sub" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="auto_title">Titolo pubblico</label>
+          <input id="auto_title" placeholder="Black Clover (SUB-ITA)" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="auto_image">Poster / cover URL (opzionale)</label>
+          <input id="auto_image" placeholder="https://i.imgur.com/qualcosa.jpeg" />
+        </div>
+      </div>
+
+      <div class="row full">
+        <div style="flex:1 1 100%;">
+          <label for="auto_url">URL Episodio 1 (o il primo link valido)</label>
+          <input id="auto_url" placeholder="https://srvXX.../DDL/ANIME/..._Ep_001_SUB_ITA.mp4" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="auto_eps">Numero totale episodi</label>
+          <input id="auto_eps" type="number" min="1" placeholder="170" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="auto_add">Aggiungi al catalogo</button>
+        <button class="outline" id="auto_clear">Reset campi</button>
+      </div>
+    </section>
+
+    <!-- ===================== TIPO 2: AUTO-RANGE (segmenti) ===================== -->
+    <section class="panel" id="rangePanel">
+      <h2>Serie lunga a segmenti <span style="color:var(--accent);">(generator: "auto-range")</span></h2>
+      <div class="section-desc">Per serie infinite tipo One Piece, dove cambi server ogni tot episodi. Definisci più "segmenti": Ep 1→599 server A, 600→889 server B, ecc.</div>
+
+      <div class="row full">
+        <div style="flex:1 1 100%;">
+          <label for="range_id">ID interno</label>
+          <input id="range_id" placeholder="OnePieceITA" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="range_title">Titolo pubblico</label>
+          <input id="range_title" placeholder="One Piece (ITA)" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="range_image">Poster / cover URL (opzionale)</label>
+          <input id="range_image" placeholder="https://i.imgur.com/L2sTPqV.jpeg" />
+        </div>
+      </div>
+
+      <div class="small-head" style="margin-top:8px;">
+        <div class="small-title">Segmenti episodi</div>
+        <button class="outline" id="seg_addBtn" style="font-size:.7rem;line-height:1;padding:6px 8px;">+ Aggiungi segmento</button>
+      </div>
+
+      <div id="segmentsContainer"></div>
+
+      <div class="actions">
+        <button class="primary" id="range_add">Aggiungi al catalogo</button>
+        <button class="outline" id="range_clear">Reset campi</button>
+      </div>
+    </section>
+
+    <!-- ===================== TIPO 3: AUTO-SEASONAL (stagioni) ===================== -->
+    <section class="panel" id="seasonalPanel">
+      <h2>Serie stagionale <span style="color:var(--accent);">(generator: "auto-seasonal")</span></h2>
+      <div class="section-desc">Per serie con più stagioni. Ogni stagione ha un suo URL Episodio 1. Io costruisco le quickAddSeason per ognuna.</div>
+
+      <div class="row full">
+        <div style="flex:1 1 100%;">
+          <label for="sea_id">ID interno</label>
+          <input id="sea_id" placeholder="MyheroAcademiaITA" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="sea_title">Titolo pubblico</label>
+          <input id="sea_title" placeholder="My Hero Academia (ITA)" />
+        </div>
+        <div style="flex:1 1 100%;">
+          <label for="sea_image">Poster principale serie (opzionale)</label>
+          <input id="sea_image" placeholder="https://i.imgur.com/a6oZaJX.jpeg" />
+        </div>
+      </div>
+
+      <div class="small-head" style="margin-top:8px;">
+        <div class="small-title">Stagioni</div>
+        <button class="outline" id="season_addBtn" style="font-size:.7rem;line-height:1;padding:6px 8px;">+ Aggiungi stagione</button>
+      </div>
+
+      <div id="seasonsContainer"></div>
+
+      <div class="actions">
+        <button class="primary" id="sea_add">Aggiungi al catalogo</button>
+        <button class="outline" id="sea_clear">Reset campi</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== OUTPUT ===================== -->
+  <section class="output-panel">
+    <div class="output-head">
+      <div class="output-head-left">
+        <div class="output-title">Output catalogo parziale</div>
+        <div class="output-desc">Questo NON è JSON, è codice JS pronto. Copia tutto dentro CATALOG (o solo l'ultimo elemento se stai aggiungendo una singola serie).</div>
+      </div>
+      <div class="actions">
+        <button class="outline" id="copyBtn">Copia</button>
+        <button class="danger" id="clearAllBtn">Svuota tutto</button>
+      </div>
+    </div>
+    <textarea id="finalOutput" readonly>[ ]</textarea>
+  </section>
+
+<script>
+// ============ helper parsing stile UrlParser.parseAnimeUrl ============
+function parseAnimeUrl(url){
+  // esempio atteso:
+  // https://srvXX.../DDL/ANIME/HunterXHunter/HunterXHunter_Ep_001_SUB_ITA.mp4
+  // gruppi:
+  // 1: root+"/DDL/ANIME/"
+  // 2: folder serie
+  // 3: prefix file prima di _Ep_
+  // 4: numero episodio (con zeri)
+  // 5: lingua (SUB_ITA / ITA / ecc)
+  const re = /^(https?:\/\/[^/]+\/DDL\/ANIME\/)([^/]+)\/([^_]+)_Ep_([0-9]+)_([A-Z_]+)\.mp4$/i;
+  const m = url.trim().match(re);
+  if(!m){return null;}
+  const baseUrl = m[1] + m[2] + "/"; // root+cartella+"/"
+  const filePrefix = m[3] + "_Ep_";  // esempio: HunterXHunter_Ep_
+  const padLength = m[4].length;      // es. "001" => 3
+  const lang = m[5].replace(/_/g," "); // SUB_ITA -> "SUB ITA"
+  return {baseUrl,filePrefix,padLength,lang};
+}
+
+// ============ stato locale: array di PEZZI DI CODICE (stringhe) da incollare in CATALOG ============
+const codeEntries = [];
+
+function refreshOutput(){
+  const out = document.getElementById('finalOutput');
+  const body = codeEntries.length
+    ? '[\n  ' + codeEntries.join(',\n\n  ') + '\n]'
+    : '[ ]';
+  out.value = body;
+}
+
+function copyOutput(){
+  const out = document.getElementById('finalOutput');
+  out.select();
+  out.setSelectionRange(0, 999999);
+  try {
+    document.execCommand('copy');
+    alert('Copiato!');
+  } catch(e){
+    console.warn('copy failed', e);
+  }
+}
+
+function clearAll(){
+  if(!confirm('Sicuro? Svuoto tutte le voci generate.')) return;
+  codeEntries.length = 0;
+  refreshOutput();
+}
+
+// piccola util per escape singoli apici e backslash dentro le stringhe JS generate
+function esc(str){
+  return str.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+// ============ sezione AUTO (quickAddSeries) ============
+function clearAuto(){
+  document.getElementById('auto_id').value = '';
+  document.getElementById('auto_title').value = '';
+  document.getElementById('auto_image').value = '';
+  document.getElementById('auto_url').value = '';
+  document.getElementById('auto_eps').value = '';
+}
+
+function addAuto(){
+  const id = document.getElementById('auto_id').value.trim();
+  const title = document.getElementById('auto_title').value.trim();
+  const image = document.getElementById('auto_image').value.trim();
+  const url = document.getElementById('auto_url').value.trim();
+  const episodes = parseInt(document.getElementById('auto_eps').value, 10);
+
+  if(!title || !url || !episodes){
+    alert('Compila almeno Titolo, URL episodio e Numero episodi. (ID e Cover sono opzionali)');
+    return;
+  }
+
+  // validazione URL base, così ti avverto se hai scritto male
+  const info = parseAnimeUrl(url);
+  if(!info){
+    alert('URL episodio non riconosciuto. Deve finire tipo ..._Ep_001_ITA.mp4 o ..._Ep_01_SUB_ITA.mp4');
+    return;
+  }
+
+  // costruiamo `UrlParser.quickAddSeries(...)`
+  const extraOpts = [];
+  if(id)    extraOpts.push(`id: '${esc(id)}'`);
+  if(image) extraOpts.push(`image: '${esc(image)}'`);
+  const optsStr = extraOpts.length ? `, {${extraOpts.join(', ')}}` : '';
+
+  const code = `UrlParser.quickAddSeries('${esc(url)}', '${esc(title)}', ${episodes}${optsStr})`;
+  codeEntries.push(code);
+  refreshOutput();
+  alert('Aggiunta voce (serie semplice) ✅');
+}
+
+// ============ sezione AUTO-RANGE (generator: 'auto-range') ============
+function addSegmentRow(){
+  const wrap = document.createElement('div');
+  wrap.className = 'small-row segment-row';
+  wrap.innerHTML = `
+    <div class="small-head">
+      <div class="small-title">Segmento episodi</div>
+      <button type="button" class="remove-btn seg-remove">Rimuovi</button>
+    </div>
+    <div class="row inline">
+      <div style="flex:1 1 60px;min-width:60px;">
+        <label>Da (from)</label>
+        <input class="seg_from" type="number" min="1" placeholder="1" />
+      </div>
+      <div style="flex:1 1 60px;min-width:60px;">
+        <label>A (to)</label>
+        <input class="seg_to" type="number" min="1" placeholder="100" />
+      </div>
+      <div style="flex:1 1 80px;min-width:80px;">
+        <label>startNumber (opz)</label>
+        <input class="seg_start" type="number" min="1" placeholder="1" />
+      </div>
+    </div>
+    <div class="row full">
+      <div style="flex:1 1 100%;">
+        <label>baseUrl</label>
+        <input class="seg_base" placeholder="https://srvXX.../DDL/ANIME/OnePieceITA/" />
+      </div>
+      <div style="flex:1 1 100%;">
+        <label>filePrefix</label>
+        <input class="seg_pref" placeholder="OnePiece_Ep_" />
+      </div>
+    </div>
+    <div class="row inline">
+      <div style="flex:1 1 80px;min-width:80px;">
+        <label>padLength</label>
+        <input class="seg_pad" type="number" min="1" placeholder="3" />
+      </div>
+      <div style="flex:1 1 100px;min-width:100px;">
+        <label>lang</label>
+        <input class="seg_lang" placeholder="ITA / SUB ITA" />
+      </div>
+    </div>
+  `;
+
+  wrap.querySelector('.seg-remove').addEventListener('click', ()=>{
+    wrap.remove();
+  });
+
+  document.getElementById('segmentsContainer').appendChild(wrap);
+}
+
+function clearRange(){
+  document.getElementById('range_id').value = '';
+  document.getElementById('range_title').value = '';
+  document.getElementById('range_image').value = '';
+  document.getElementById('segmentsContainer').innerHTML = '';
+}
+
+function addRange(){
+  const id = document.getElementById('range_id').value.trim();
+  const title = document.getElementById('range_title').value.trim();
+  const image = document.getElementById('range_image').value.trim();
+
+  if(!id || !title){
+    alert('Serve ID e Titolo per la serie a segmenti');
+    return;
+  }
+
+  const segRows = Array.from(document.querySelectorAll('.segment-row'));
+  if(!segRows.length){
+    alert('Aggiungi almeno un segmento');
+    return;
+  }
+
+  const segCodes = [];
+  for(const row of segRows){
+    const from = parseInt(row.querySelector('.seg_from').value,10);
+    const to = parseInt(row.querySelector('.seg_to').value,10);
+    const startNumberStr = row.querySelector('.seg_start').value.trim();
+    const baseUrl = row.querySelector('.seg_base').value.trim();
+    const filePrefix = row.querySelector('.seg_pref').value.trim();
+    const padLength = parseInt(row.querySelector('.seg_pad').value,10);
+    const lang = row.querySelector('.seg_lang').value.trim();
+
+    if(!from || !to || !baseUrl || !filePrefix || !padLength || !lang){
+      alert('Compila tutti i campi del segmento (from, to, baseUrl, filePrefix, padLength, lang)');
+      return;
+    }
+
+    const extras = (startNumberStr && !isNaN(parseInt(startNumberStr,10)))
+      ? `,\n        startNumber: ${parseInt(startNumberStr,10)}`
+      : '';
+
+    const segStr = `{
+        from: ${from}, to: ${to},
+        baseUrl: '${esc(baseUrl)}',
+        filePrefix: '${esc(filePrefix)}',
+        padLength: ${padLength},
+        lang: '${esc(lang)}'${extras}
+      }`;
+    segCodes.push(segStr);
+  }
+
+  const imageLine = image ? `\n  image: '${esc(image)}',` : '';
+
+  const code = `{
+  id: '${esc(id)}',
+  title: '${esc(title)}',${imageLine}
+  generator: 'auto-range',
+  segments: [\n${segCodes.map(s=>'      '+s).join(',\n')}\n  ]
+}`;
+
+  codeEntries.push(code);
+  refreshOutput();
+  alert('Aggiunta voce (serie a segmenti) ✅');
+}
+
+// ============ sezione AUTO-SEASONAL (generator: 'auto-seasonal') ============
+function addSeasonRow(){
+  const wrap = document.createElement('div');
+  wrap.className = 'small-row season-row';
+  wrap.innerHTML = `
+    <div class="small-head">
+      <div class="small-title">Stagione</div>
+      <button type="button" class="remove-btn sea-remove">Rimuovi</button>
+    </div>
+    <div class="row full">
+      <div style="flex:1 1 100%;">
+        <label>Titolo stagione (opzionale)</label>
+        <input class="sea_titleSeason" placeholder="Stagione 1 / Parte 2 / ecc" />
+      </div>
+      <div style="flex:1 1 100%;">
+        <label>Poster stagione (opzionale)</label>
+        <input class="sea_imgSeason" placeholder="https://i.imgur.com/whatever.jpeg" />
+      </div>
+    </div>
+    <div class="row inline">
+      <div style="flex:1 1 100px;min-width:100px;">
+        <label># episodi</label>
+        <input class="sea_epsSeason" type="number" min="1" placeholder="24" />
+      </div>
+      <div style="flex:1 1 100%;">
+        <label>URL episodio 1 (di questa stagione)</label>
+        <input class="sea_urlSeason" placeholder="https://srvXX.../DDL/ANIME/..._Ep_01_ITA.mp4" />
+      </div>
+    </div>
+  `;
+
+  wrap.querySelector('.sea-remove').addEventListener('click', ()=>{
+    wrap.remove();
+  });
+
+  document.getElementById('seasonsContainer').appendChild(wrap);
+}
+
+function clearSeasonal(){
+  document.getElementById('sea_id').value = '';
+  document.getElementById('sea_title').value = '';
+  document.getElementById('sea_image').value = '';
+  document.getElementById('seasonsContainer').innerHTML = '';
+}
+
+function addSeasonal(){
+  const id = document.getElementById('sea_id').value.trim();
+  const title = document.getElementById('sea_title').value.trim();
+  const image = document.getElementById('sea_image').value.trim();
+
+  if(!id || !title){
+    alert('Serve ID e Titolo della serie');
+    return;
+  }
+
+  const seasonRows = Array.from(document.querySelectorAll('.season-row'));
+  if(!seasonRows.length){
+    alert('Aggiungi almeno una stagione');
+    return;
+  }
+
+  const seasonCodes = [];
+  for(const row of seasonRows){
+    const seasonTitle = row.querySelector('.sea_titleSeason').value.trim();
+    const seasonImg = row.querySelector('.sea_imgSeason').value.trim();
+    const epsCount = parseInt(row.querySelector('.sea_epsSeason').value,10);
+    const urlSeason = row.querySelector('.sea_urlSeason').value.trim();
+
+    if(!epsCount || !urlSeason){
+      alert('Per ogni stagione servono #episodi e URL Ep 01');
+      return;
+    }
+
+    // validazione URL per errori
+    if(!parseAnimeUrl(urlSeason)){
+      alert('URL stagione non riconosciuto. Deve essere tipo ..._Ep_01_ITA.mp4');
+      return;
+    }
+
+    // Costruisco la chiamata UrlParser.quickAddSeason(urlStagione, numEp, 'Titolo Stagione', {image: '...'})
+    const titleArg = seasonTitle ? `, '${esc(seasonTitle)}'` : `, ''`;
+    const extra   = seasonImg ? `, {image: '${esc(seasonImg)}'}` : '';
+
+    const code = `UrlParser.quickAddSeason('${esc(urlSeason)}', ${epsCount}${titleArg}${extra})`;
+    seasonCodes.push(code);
+  }
+
+  const imgLine = image ? `\n  image: '${esc(image)}',` : '';
+
+  const code = `{
+  id: '${esc(id)}',
+  title: '${esc(title)}',${imgLine}
+  generator: 'auto-seasonal',
+  seasons: [\n    ${seasonCodes.join(',\n    ')}\n  ]
+}`;
+
+  codeEntries.push(code);
+  refreshOutput();
+  alert('Aggiunta voce (stagionale) ✅');
+}
+
+// ============ hook up bottoni ============
+(function init(){
+  // Auto
+  document.getElementById('auto_add').addEventListener('click', addAuto);
+  document.getElementById('auto_clear').addEventListener('click', clearAuto);
+
+  // Range
+  document.getElementById('seg_addBtn').addEventListener('click', addSegmentRow);
+  document.getElementById('range_add').addEventListener('click', addRange);
+  document.getElementById('range_clear').addEventListener('click', clearRange);
+
+  // Seasonal
+  document.getElementById('season_addBtn').addEventListener('click', addSeasonRow);
+  document.getElementById('sea_add').addEventListener('click', addSeasonal);
+  document.getElementById('sea_clear').addEventListener('click', clearSeasonal);
+
+  // Output
+  document.getElementById('copyBtn').addEventListener('click', copyOutput);
+  document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+
+  // start: mettiamo già un segmento e una stagione vuoti
+  addSegmentRow();
+  addSeasonRow();
+
+  refreshOutput();
+})();
+</script>
+</body>
+</html>
