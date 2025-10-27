@@ -50,6 +50,27 @@ app.use((req, res, next) => {
 // PARSING JSON dopo CORS
 app.use(express.json());
 
+
+app.get("/__debug", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+
+  // mettiamo anche gli header CORS che dovrebbe già mettere il middleware,
+  // così vediamo cosa arriva.
+  const origin = req.headers.origin || null;
+  res.json({
+    msg: "debug alive",
+    originReceived: origin,
+    allowedOrigins: [
+      "https://lorenzovichi.it",
+      "http://localhost:5500",
+      "http://127.0.0.1:5500",
+      "http://localhost:8080"
+    ],
+    envPort: process.env.PORT || 8080,
+    now: new Date().toISOString()
+  });
+});
+
 // -------------- UTIL & MIDDLEWARE AUTH --------------
 function signToken(user) {
   return jwt.sign(
