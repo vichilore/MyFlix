@@ -2,6 +2,10 @@
 // Tutte le chiamate fetch verso il server Express/Supabase
 
 const API = (() => {
+  // fallback: se CONFIG non è definito (perché config.js non è caricato),
+  // usiamo localhost di default così il codice non esplode
+  const BASE_URL = (window.CONFIG && window.CONFIG.API_BASE_URL) || "http://localhost:8080";
+
   async function authedRequest(method, path, body) {
     const headers = { "Content-Type": "application/json" };
 
@@ -12,7 +16,7 @@ const API = (() => {
       throw new Error("Not authenticated");
     }
 
-    const res = await fetch(CONFIG.API_BASE_URL + path, {
+    const res = await fetch(BASE_URL + path, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined
@@ -25,7 +29,7 @@ const API = (() => {
 
   // --- AUTH ---
   async function signup(username, pin, avatarUrl) {
-    const res = await fetch(CONFIG.API_BASE_URL + "/signup", {
+    const res = await fetch(BASE_URL + "/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, pin, avatarUrl })
@@ -36,7 +40,7 @@ const API = (() => {
   }
 
   async function login(username, pin) {
-    const res = await fetch(CONFIG.API_BASE_URL + "/login", {
+    const res = await fetch(BASE_URL + "/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, pin })
