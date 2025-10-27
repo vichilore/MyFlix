@@ -3,6 +3,6 @@
 
 const CONFIG = {
   // In locale:
-  API_BASE_URL: "http://localhost:8080"
+  API_BASE_URL: "https://itanime-api.onrender.com"
   // In produzione cambierai questo con l'URL del tuo Render backend
 };
