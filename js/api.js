@@ -1,10 +1,18 @@
 // js/api.js
-// Tutte le chiamate fetch verso il server Express/Supabase
+// Wrapper per tutte le chiamate al backend (signup, login, progress, ecc.)
 
 const API = (() => {
-  // fallback: se CONFIG non è definito (perché config.js non è caricato),
-  // usiamo localhost di default così il codice non esplode
-  const BASE_URL = (window.CONFIG && window.CONFIG.API_BASE_URL) || "http://localhost:8080";
+
+    const FALLBACK_URL = "https://itanime.onrender.com";
+    
+  // Invece di fissare BASE_URL una volta sola, lo calcoliamo ogni volta.
+  function getBaseUrl() {
+    if (window.CONFIG && window.CONFIG.API_BASE_URL) {
+      return window.CONFIG.API_BASE_URL;
+    }
+    // fallback di emergenza se proprio non c'è CONFIG
+    return FALLBACK_URL;
+  }
 
   async function authedRequest(method, path, body) {
     const headers = { "Content-Type": "application/json" };
@@ -16,7 +24,7 @@ const API = (() => {
       throw new Error("Not authenticated");
     }
 
-    const res = await fetch(BASE_URL + path, {
+    const res = await fetch(getBaseUrl() + path, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined
@@ -28,24 +36,27 @@ const API = (() => {
   }
 
   // --- AUTH ---
+
   async function signup(username, pin, avatarUrl) {
-    const res = await fetch(BASE_URL + "/signup", {
+    const res = await fetch(getBaseUrl() + "/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, pin, avatarUrl })
     });
-    const data = await res.json();
+
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Signup failed");
     return data;
   }
 
   async function login(username, pin) {
-    const res = await fetch(BASE_URL + "/login", {
+    const res = await fetch(getBaseUrl() + "/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, pin })
     });
-    const data = await res.json();
+
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Login failed");
     return data;
   }
@@ -61,6 +72,7 @@ const API = (() => {
   }
 
   // --- WATCH PROGRESS SYNC ---
+
   function saveProgress(series_id, ep_number, seconds) {
     return authedRequest("POST", "/progress/save", {
       series_id, ep_number, seconds
