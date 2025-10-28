@@ -18,6 +18,15 @@ class WatchPage {
       });
     }
   }
+  
+  static loadSeries(seriesObj) {
+    if (!seriesObj) return;
+    this.currentSeries = seriesObj;
+
+    UIManager.showWatch();
+    this.updateHeader(seriesObj);
+    this.renderSeasons(seriesObj); // <- renderSeasons chiama updateResumeButton()
+  }
 
   static updateHeader(series) {
     const banner = $('#watchBanner');
@@ -102,36 +111,54 @@ class WatchPage {
   }
 
   static updateResumeButton(series) {
-    const btn = $('#watchResumeBtn');
-    if (!btn || !series) return;
+  const btn = $('#watchResumeBtn');
+  if (!btn || !series) return;
 
-    const progress = ProgressManager.load(series.id);
-    let resumeEp = 0;
+  const progress = ProgressManager.load(series.id);
+  let resumeEp = 0;
+  let resumeSeconds = 0;
 
-    if (progress?.positions) {
-      const entries = Object.entries(progress.positions).filter(([n, p]) =>
-        p && typeof p.t === 'number' && typeof p.d === 'number' && p.t < (p.d - 10)
-      );
-      if (entries.length) {
-        entries.sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
-        resumeEp = parseInt(entries[0][0], 10);
-      }
+  if (progress?.positions) {
+    // prendiamo tutti gli episodi in cui NON sei già praticamente alla fine
+    const entries = Object.entries(progress.positions).filter(([epNum, p]) =>
+      p &&
+      typeof p.t === 'number' &&
+      typeof p.d === 'number' &&
+      p.t < (p.d - 10) // se mancano più di ~10s alla fine, è riprendibile
+    );
+
+    if (entries.length) {
+      // ordina per timestamp più recente
+      entries.sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+      resumeEp = parseInt(entries[0][0], 10);
+      resumeSeconds = entries[0][1].t || 0;
     }
+  }
 
-    if (!resumeEp && progress?.lastEpisode) {
-      const lp = progress.positions?.[progress.lastEpisode];
-      if (lp && lp.t && lp.d && lp.t < lp.d - 10) {
-        resumeEp = progress.lastEpisode;
-      }
+  // fallback: se non ho trovato sopra, prova l'ultimo episodio noto
+  if (!resumeEp && progress?.lastEp) {
+    const lp = progress.positions?.[progress.lastEp];
+    if (lp && lp.t && lp.d && lp.t < lp.d - 10) {
+      resumeEp = progress.lastEp;
+      resumeSeconds = lp.t || 0;
     }
+  }
 
-    if (resumeEp) {
-      btn.style.display = 'inline-flex';
-      btn.textContent = `▶ Riprendi episodio ${String(resumeEp).padStart(2, '0')}`;
-      btn.onclick = () => Player.play(series, resumeEp);
-    } else {
-      btn.style.display = 'none';
-    }
+ if (resumeEp) {
+  btn.style.display = 'inline-flex';
+  btn.textContent = `▶ Riprendi episodio ${String(resumeEp).padStart(2, '0')}`;
+
+  // usa UIManager.goWatch così:
+  // - montiamo la pagina
+  // - apriamo il player
+  // - saltiamo al timestamp salvato
+  btn.onclick = () => {
+    UIManager.goWatch(series.id, resumeEp, resumeSeconds);
+  };
+} else {
+  btn.style.display = 'none';
+  btn.onclick = null;
+}
   }
 
   static updateEpisodeButtonState(seriesId, ep) {
@@ -140,3 +167,5 @@ class WatchPage {
     if (btn) btn.classList.add('watched');
   }
 }
+
+window.WatchPage = WatchPage;

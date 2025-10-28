@@ -35,6 +35,34 @@ const API = (() => {
     return data;
   }
 
+  // --- PROFILE ---
+  async function getCurrentProfile() {
+    try {
+      return await authedRequest("GET", "/profiles/me");
+    } catch(e) {
+      // fallback a /me per backend che non espone /profiles/me
+      return await authedRequest("GET", "/me");
+    }
+  }
+
+  async function listMyProfiles() {
+    try {
+      return await authedRequest("GET", "/profiles?owner=me");
+    } catch(e) {
+      try {
+        return await authedRequest("GET", "/profiles");
+      } catch {
+        // se non supportato, ritorna profilo corrente come unica voce
+        const me = await getCurrentProfile();
+        return me ? [me] : [];
+      }
+    }
+  }
+
+  function switchCurrentProfile(profileId) {
+    return authedRequest("PATCH", "/profiles/current", { profileId });
+  }
+
   // --- AUTH ---
 
   async function signup(username, pin, avatarUrl) {
@@ -87,6 +115,9 @@ const API = (() => {
     signup,
     login,
     getMe,
+    getCurrentProfile,
+    listMyProfiles,
+    switchCurrentProfile,
     setPublicActivity,
     saveProgress,
     getProgress

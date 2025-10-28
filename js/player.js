@@ -1,60 +1,113 @@
 // js/player.js
+
 class Player {
   static currentSeries = null;
   static currentEp = null;
   static lastSave = 0;
 
   static init() {
-    const overlay = $('#playerOverlay');
-    const video   = $('#video');
-    const closeBtn= $('#playerClose');
-    const prevBtn = $('#prevEp');
-    const nextBtn = $('#nextEp');
+    const overlay = document.getElementById('playerOverlay');
+    const video   = document.getElementById('video');
+    const source  = document.getElementById('episode');
+    const closeBtn= document.getElementById('playerClose');
+    const prevBtn = document.getElementById('prevEp');
+    const nextBtn = document.getElementById('nextEp');
 
-    closeBtn?.addEventListener('click', () => this.close());
-    prevBtn.onclick = () => this.move((this.currentEp || 1) - 1);
-    nextBtn.onclick = () => this.move((this.currentEp || 1) + 1);
+    if (!overlay || !video || !source) {
+      console.warn("Player.init: elementi video mancanti");
+      return;
+    }
 
+    // chiudi player
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.close());
+    }
+
+    // episodio precedente / successivo
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        const prev = (this.currentEp || 1) - 1;
+        this.move(prev);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        const next = (this.currentEp || 1) + 1;
+        this.move(next);
+      });
+    }
+
+    // salvataggio avanzamento
     video.addEventListener('timeupdate', () => this.handleTimeUpdate());
-    video.addEventListener('ended', () => this.handleEnded());
+    video.addEventListener('ended',      () => this.handleEnded());
 
-    // Sync events for watch together hooks (stub-safe)
-    video.addEventListener('play',   () => WatchTogether.broadcastState());
-    video.addEventListener('pause',  () => WatchTogether.broadcastState());
-    video.addEventListener('seeked', () => WatchTogether.broadcastState());
+    // sync con WatchTogether se presente
+    video.addEventListener('play',   () => { if (window.WatchTogether) WatchTogether.broadcastState?.(); });
+    video.addEventListener('pause',  () => { if (window.WatchTogether) WatchTogether.broadcastState?.(); });
+    video.addEventListener('seeked', () => { if (window.WatchTogether) WatchTogether.broadcastState?.(); });
 
+    // tastiera
     overlay.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
+    // swipe down per chiudere su mobile
     this.setupTouchGestures(overlay);
   }
 
   static play(series, ep) {
+    if (!series) {
+      console.warn("Player.play: serie mancante");
+      return;
+    }
+
     this.currentSeries = series;
     this.currentEp = ep;
 
-    const overlay = $('#playerOverlay');
-    const video   = $('#video');
-    const source  = $('#episode');
-    const nowTitle= $('#nowTitle');
-    const nowInfo = $('#nowInfo');
+    const overlay = document.getElementById('playerOverlay');
+    const video   = document.getElementById('video');
+    const source  = document.getElementById('episode');
+    const nowTitle= document.getElementById('nowTitle');
+    const nowInfo = document.getElementById('nowInfo');
 
+    if (!overlay || !video || !source) {
+      console.warn("Player.play: elementi DOM mancanti");
+      return;
+    }
+
+    // URL dell'episodio da SeriesHelper
     const src = SeriesHelper.buildEpisodeUrl(series, ep);
+
+    // metti src
     source.src = src;
+    // tagga dataset per WatchTogether sync
+    try {
+      video.dataset.seriesId = String(series.id);
+      video.dataset.epNumber = String(ep);
+    } catch {}
     video.load();
 
-    nowTitle.textContent = `${series.title} — Ep ${String(ep).padStart(3, '0')}`;
-    nowInfo.textContent  = src.split('/').slice(-2).join('/');
+    // UI info
+    if (nowTitle) {
+      nowTitle.textContent = `${series.title} — Ep ${String(ep).padStart(3, '0')}`;
+    }
+    if (nowInfo) {
+      nowInfo.textContent  = src.split('/').slice(-2).join('/');
+    }
 
+    // aggiorna progress manager locale
     ProgressManager.setLastEpisode(series.id, ep);
 
+    // mostra overlay player
     overlay.style.display = 'flex';
     overlay.classList.add('show');
     document.documentElement.style.overflow = 'hidden';
 
-    // resume from saved position
-    const pos = ProgressManager.getPosition(series.id, ep);
+    // resume da posizione salvata
+    const pos = ProgressManager.getPosition(series.id, ep); // {t,d,ts}? o null
+
     const trySeek = () => {
-      if (pos?.t > 5) video.currentTime = pos.t - 1;
+      if (pos && pos.t && pos.t > 5) {
+        video.currentTime = pos.t - 1;
+      }
       video.play().catch(() => {});
     };
 
@@ -64,24 +117,25 @@ class Player {
       video.addEventListener('canplay', trySeek, { once: true });
     }
 
-    // WatchTogether hooks
-    if (WatchTogether.roomId) {
-      WatchTogether.joinRoom(WatchTogether.roomId);
-      WatchTogether.notifyEpisodeChange();
-      setTimeout(() => WatchTogether.broadcastState(), 400);
+    // watch together broadcast
+    if (window.WatchTogether && WatchTogether.roomId) {
+      WatchTogether.joinRoom?.(WatchTogether.roomId);
+      WatchTogether.notifyEpisodeChange?.();
+      setTimeout(() => WatchTogether.broadcastState?.(), 400);
     }
   }
 
   static move(epNum) {
     if (!this.currentSeries) return;
+
     const max = SeriesHelper.totalEpisodes(this.currentSeries);
     if (epNum < 1 || epNum > max) return;
 
-    // se cambia stagione, aggiorniamo il picker
-    if (SeriesHelper.isSeasonal(this.currentSeries)) {
-      const { seasonIndex } = SeriesHelper.seasonFromAbsolute(this.currentSeries, epNum);
-      if (seasonIndex !== WatchPage.currentSeasonIndex) {
-        WatchPage.currentSeasonIndex = seasonIndex;
+    // se cambia stagione aggiorniamo la view di WatchPage
+    if (SeriesHelper.isSeasonal(this.currentSeries) && window.WatchPage) {
+      const data = SeriesHelper.seasonFromAbsolute(this.currentSeries, epNum);
+      if (data && data.seasonIndex !== WatchPage.currentSeasonIndex) {
+        WatchPage.currentSeasonIndex = data.seasonIndex;
         WatchPage.renderSeasons(this.currentSeries);
       }
     }
@@ -91,78 +145,92 @@ class Player {
 
   static close() {
     this.persistProgress();
-    const overlay = $('#playerOverlay');
-    const video   = $('#video');
-    const source  = $('#episode');
+
+    const overlay = document.getElementById('playerOverlay');
+    const video   = document.getElementById('video');
+    const source  = document.getElementById('episode');
 
     try { video.pause(); } catch {}
-    source.src = '';
+    if (source) source.src = '';
 
     overlay.classList.remove('show');
     overlay.style.display = 'none';
     document.documentElement.style.overflow = '';
 
-    if (this.currentSeries) {
-      WatchPage.updateResumeButton(this.currentSeries);
+    // aggiorna UI riprendi
+    if (this.currentSeries && window.WatchPage) {
+      WatchPage.updateResumeButton?.(this.currentSeries);
     }
   }
 
   static persistProgress() {
     try {
       if (!this.currentSeries || !this.currentEp) return;
-      const video = $('#video');
+      const video = document.getElementById('video');
       const t = video?.currentTime || 0;
       const d = video?.duration || 0;
+
       if (d > 0) {
+        // salva localmente
         ProgressManager.setPosition(this.currentSeries.id, this.currentEp, t, d);
 
-        // opzionale: se loggato, manda anche al backend (non blocca la UI)
-        if (Auth.isLoggedIn()) {
+        // manda al backend
+        if (Auth.isLoggedIn && Auth.isLoggedIn()) {
           API.saveProgress(this.currentSeries.id, this.currentEp, Math.floor(t))
             .catch(() => {});
         }
       }
-    } catch {}
+    } catch(e) {
+      console.warn("persistProgress error:", e);
+    }
   }
 
   static handleTimeUpdate() {
     if (!this.currentSeries || !this.currentEp) return;
-    const video = $('#video');
+
+    const video = document.getElementById('video');
     const t = video.currentTime;
     const d = video.duration;
 
-    // salva ogni ~2s
+    // salva max ogni ~2s
     if ((Date.now() - this.lastSave) < 2000) return;
     this.lastSave = Date.now();
 
     if (d > 0) {
       ProgressManager.setPosition(this.currentSeries.id, this.currentEp, t, d);
 
-      // manda al backend best-effort
-      if (Auth.isLoggedIn()) {
-        API.saveProgress(this.currentSeries.id, this.currentEp, Math.floor(t)).catch(() => {});
+      if (Auth.isLoggedIn && Auth.isLoggedIn()) {
+        API.saveProgress(this.currentSeries.id, this.currentEp, Math.floor(t))
+          .catch(() => {});
       }
 
-      // se >90% segna come visto
+      // se hai visto >=90%
       if (t / d >= 0.9) {
         ProgressManager.markWatched(this.currentSeries.id, this.currentEp);
-        WatchPage.updateEpisodeButtonState(this.currentSeries.id, this.currentEp);
-        WatchPage.updateResumeButton(this.currentSeries);
+        if (window.WatchPage) {
+          WatchPage.updateEpisodeButtonState?.(this.currentSeries.id, this.currentEp);
+          WatchPage.updateResumeButton?.(this.currentSeries);
+        }
       }
     }
   }
 
   static handleEnded() {
     if (!this.currentSeries || !this.currentEp) return;
+
     ProgressManager.markWatched(this.currentSeries.id, this.currentEp);
     ProgressManager.clearPosition(this.currentSeries.id, this.currentEp);
-    WatchPage.updateResumeButton(this.currentSeries);
+
+    if (window.WatchPage) {
+      WatchPage.updateResumeButton?.(this.currentSeries);
+    }
+
     this.move(this.currentEp + 1);
   }
 
   static handleKeyboard(e) {
     if (/(input|textarea|select)/i.test(e.target.tagName)) return;
-    const video = $('#video');
+    const video = document.getElementById('video');
 
     switch (e.key) {
       case ' ':
@@ -170,19 +238,24 @@ class Player {
         if (video.paused) video.play().catch(() => {});
         else video.pause();
         break;
+
       case 'ArrowLeft':
         video.currentTime = Math.max(0, (video.currentTime || 0) - 5);
         break;
+
       case 'ArrowRight':
         video.currentTime = Math.min(video.duration || 1e9, (video.currentTime || 0) + 5);
         break;
+
       case 'Escape':
         this.close();
         break;
+
       case 'n':
       case 'N':
         this.move((this.currentEp || 1) + 1);
         break;
+
       case 'p':
       case 'P':
         this.move((this.currentEp || 1) - 1);
@@ -191,6 +264,7 @@ class Player {
   }
 
   static setupTouchGestures(overlay) {
+    if (!overlay) return;
     let startY = 0, dy = 0, swiping = false;
 
     overlay.addEventListener('touchstart', (e) => {
@@ -218,3 +292,11 @@ class Player {
     });
   }
 }
+
+// 👇 QUESTO È IL PEZZO CRITICO 👇
+// Forza l'oggetto Player a diventare globale, SEMPRE.
+// Funziona anche se lo script è type="module".
+window.Player = Player;
+
+// inizializza i listener del player
+Player.init?.();

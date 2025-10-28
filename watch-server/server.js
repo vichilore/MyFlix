@@ -56,6 +56,7 @@ wss.on('connection', (ws) => {
 
   ws.on('message', raw => {
     let msg;
+    console.log('Received message:', raw.toString());
     try {
       msg = JSON.parse(raw.toString());
     } catch {
@@ -81,6 +82,7 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     if (ws._roomId && rooms.has(ws._roomId)) {
+      console.log('Client disconnected from room:', ws._roomId);
       const room = rooms.get(ws._roomId);
       room.clients.delete(ws);
       if (room.clients.size === 0) {

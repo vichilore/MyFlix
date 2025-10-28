@@ -14,7 +14,19 @@
       <div class="brand" id="brandLogo">
         <img src="AMICI-Photoroom.png" alt="VichiFlix Logo" class="logo-img" />
       </div>
+
+      <!-- Profile entrypoint -->
+      <button id="profileBtn" class="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profilo">
+        <img id="profileAvatar" class="profile-avatar" alt="Avatar" />
+        <span id="profileName" class="profile-name">Profilo</span>
+      </button>
     </header>
+
+    <!-- Profile menu -->
+    <div id="profileMenu" class="profile-menu" role="menu" aria-hidden="true">
+      <button id="profileSwitch" class="profile-menu-item" role="menuitem">Cambia profilo</button>
+      <button id="profileLogout" class="profile-menu-item" role="menuitem">Logout</button>
+    </div>
 
     <!-- NAVIGATION -->
     <nav class="nav-center-box">
@@ -32,8 +44,11 @@
       <div class="container">
         <div id="searchStatus" class="search-status" style="display:none"></div>
       </div>
+      
       <div id="homeCarousels" class="container"></div>
     </section>
+
+
 
     <!-- TUTTI -->
     <section id="all" class="all" style="display:none">
@@ -210,18 +225,19 @@
   <script src="js/progress.js"></script>
   <script src="js/seriesHelper.js"></script>
 
-  <script src="js/ui-manager.js"></script>
+  <script src="js/player.js"></script>
   <script src="js/carousel.js"></script>
   <script src="js/homePage.js"></script>
   <script src="js/allPage.js"></script>
   <script src="js/watchPage.js"></script>
-  <script src="js/player.js"></script>
-
+  
   <script src="js/search.js"></script>
   <script src="js/watchTogether.js"></script>
   <script src="js/dockMetrics.js"></script>
   <script src="js/ui-authmodal.js"></script>
 
+  <script src="js/ui-manager.js"></script>
+  <script src="js/userProfile.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -203,6 +203,44 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .main-header{ position:fixed; top:-70px; left:48px; z-index:120; background:transparent; }
 .logo-img{ width:364px; height:364px; object-fit:contain; cursor:pointer; transition:.2s; }
 
+/* ===== PROFILE (header + menu) ===== */
+.profile-btn{
+  position:fixed; top:18px; right:18px; z-index:121;
+  display:inline-flex; align-items:center; gap:10px;
+  min-height: var(--hit);
+  padding:6px 10px; border-radius:12px;
+  border:1px solid var(--stroke);
+  background: rgba(17,17,20,.7);
+  color:#fff; cursor:pointer;
+  backdrop-filter: blur(8px);
+}
+.profile-btn:focus-visible{ outline:2px solid rgba(255,255,255,.5); outline-offset:4px; }
+.profile-avatar{
+  width:32px; height:32px; border-radius:999px; object-fit:cover; background:#222;
+  border:1px solid rgba(255,255,255,.18);
+}
+.profile-name{ font-weight:800; font-size:.95rem; display:none; }
+
+@media (min-width: 744px){
+  .profile-name{ display:inline; }
+}
+
+.profile-menu{
+  position:fixed; top:66px; right:18px; z-index:130;
+  display:none; width:220px; padding:8px;
+  background: rgba(17,17,20,.92);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px; box-shadow:0 20px 40px rgba(0,0,0,.55);
+  backdrop-filter: blur(10px);
+}
+.profile-menu.show{ display:block; }
+.profile-menu-item{
+  width:100%; height:44px; display:flex; align-items:center; justify-content:flex-start;
+  gap:8px; padding:0 10px; border-radius:10px; border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04); color:#fff; cursor:pointer; margin:6px 0;
+}
+.profile-menu-item:hover{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.16); }
+
 /* ====== CAROUSEL base ====== */
 .row{ margin:28px 0 6px; position:relative; }
 .row-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }

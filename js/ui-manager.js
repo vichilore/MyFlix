@@ -1,4 +1,6 @@
 // js/ui-manager.js
+
+// helpers globali che già usi
 const $  = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
@@ -20,21 +22,91 @@ class UIManager {
     this.elements.all.style.display = 'none';
     this.elements.watch.style.display = 'none';
     this.elements.home.style.display = 'block';
+
     requestAnimationFrame(() => {
       const nb = $('.nav-center-box')?.getBoundingClientRect().bottom || 0;
       document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
     });
+
+    window.scrollTo({ top: 0 });
   }
 
   static showAll() {
     this.elements.home.style.display = 'none';
     this.elements.watch.style.display = 'none';
     this.elements.all.style.display = 'block';
+
+    requestAnimationFrame(() => {
+      const nb = $('.nav-center-box')?.getBoundingClientRect().bottom || 0;
+      document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
+    });
+
+    window.scrollTo({ top: 0 });
   }
 
   static showWatch() {
     this.elements.home.style.display = 'none';
     this.elements.all.style.display = 'none';
     this.elements.watch.style.display = 'block';
+
+    requestAnimationFrame(() => {
+      const nb = $('.nav-center-box')?.getBoundingClientRect().bottom || 0;
+      document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
+    });
+
+    window.scrollTo({ top: 0 });
   }
 }
+
+// 👇 QUI SOTTO, DOPO la classe, AGGIUNGI goWatch 👇
+
+UIManager.goWatch = function(seriesId, epNumber = null, seconds = 0) {
+  const seriesObj = Catalog.findById(seriesId);
+  if (!seriesObj) {
+    console.warn('goWatch: serie non trovata:', seriesId);
+    return;
+  }
+
+  // mostra la view "watch"
+  UIManager.showWatch();
+
+  // monta la pagina "watch" (banner, lista episodi, bottone Riprendi ecc.)
+  if (window.WatchPage) {
+    if (typeof WatchPage.loadSeries === 'function') {
+      // versione nuova (se l'hai aggiunta)
+      WatchPage.loadSeries(seriesObj);
+    } else if (typeof WatchPage.open === 'function') {
+      // versione vecchia/originale che hai tu ADESSO
+      WatchPage.open(seriesObj, false);
+    } else {
+      console.warn('WatchPage.loadSeries / open non trovate');
+    }
+  }
+
+  // se non ho specificato un episodio da guardare, mi fermo qui
+  if (epNumber == null) {
+    return;
+  }
+
+  // altrimenti parto SUBITO col player su quell'episodio
+  if (window.Player && typeof Player.play === 'function') {
+    Player.play(seriesObj, epNumber);
+
+    const videoEl = document.getElementById('video');
+
+    const trySeek = () => {
+      if (videoEl && seconds && seconds > 0) {
+        videoEl.currentTime = seconds;
+      }
+      videoEl?.play?.().catch(() => {});
+    };
+
+    if (videoEl && videoEl.readyState >= 2) {
+      trySeek();
+    } else if (videoEl) {
+      videoEl.addEventListener('canplay', trySeek, { once: true });
+    }
+  } else {
+    console.warn('Player.play non definita o Player mancante');
+  }
+};

@@ -39,8 +39,13 @@ window.addEventListener("DOMContentLoaded", () => {
     AuthModal.init();
   }
 
+  if (typeof UserProfile !== "undefined") {
+    UserProfile.init();
+  }
+
   // prima vista: Home
   UIManager.showHome();
   HomePage.render();
   AllPage.render();
+  
 });

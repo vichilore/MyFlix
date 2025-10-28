@@ -648,3 +648,12 @@ const CATALOG = [
     }
   )
 ];
+
+
+const Catalog = {
+  all: CATALOG, // se il tuo array globale si chiama ancora CATALOG
+
+  findById(seriesId) {
+    return this.all.find(s => s.id === seriesId) || null;
+  }
+};
