@@ -20,28 +20,21 @@ const app = express();
  * CORS MANUALE (prima di qualunque altra cosa!)
  * Gestiamo TUTTE le request (incluso OPTIONS) prima di body parser e prima delle route.
  */
-const allowedOrigins = new Set([
-  "https://lorenzovichi.it",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "http://localhost:8080"
-]);
-
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  if (origin && allowedOrigins.has(origin)) {
+  // Riflettiamo sempre l'origin se presente (più tollerante, utile per CDN/custom domains)
+  if (origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
-    // per cache differenziate per origin
     res.setHeader("Vary", "Origin");
   }
 
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+  res.setHeader("Access-Control-Max-Age", "600");
 
   if (req.method === "OPTIONS") {
-    // rispondi SUBITO al preflight, con gli header giusti
     return res.sendStatus(204);
   }
 
