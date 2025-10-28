@@ -41,22 +41,30 @@ function broadcastState(ws, roomId, newState) {
 }
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  try { console.log('[HTTP]', req.method, req.url); } catch {}
+  if (req.url === '/health' || req.url === '/healthz') {
+    res.writeHead(200, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
+    res.end('ok\n');
+    return;
+  }
+  res.writeHead(200, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
   res.end('WatchTogether WS up\n');
 });
 
 const wss = new WebSocketServer({
   server,
-  path: '/watch'
+  path: '/watch',
+  perMessageDeflate: false
 });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  try { console.log('[WS] connection', req?.url); } catch {}
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
 
   ws.on('message', raw => {
+    try { console.log('[WS] message', raw.toString().slice(0, 200)); } catch {}
     let msg;
-    console.log('Received message:', raw.toString());
     try {
       msg = JSON.parse(raw.toString());
     } catch {
@@ -81,8 +89,8 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    try { console.log('[WS] close'); } catch {}
     if (ws._roomId && rooms.has(ws._roomId)) {
-      console.log('Client disconnected from room:', ws._roomId);
       const room = rooms.get(ws._roomId);
       room.clients.delete(ws);
       if (room.clients.size === 0) {
@@ -103,6 +111,8 @@ setInterval(() => {
 
 // 🚨 QUESTA PARTE È CRITICA PER RENDER 🚨
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('WS server listening on', PORT);
+server.on('listening', () => {
+  const addr = server.address();
+  console.log('WS server listening on', typeof addr === 'string' ? addr : `${addr.address}:${addr.port}`);
 });
+server.listen(PORT, '0.0.0.0');
