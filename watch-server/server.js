@@ -116,3 +116,20 @@ server.on('listening', () => {
   console.log('WS server listening on', typeof addr === 'string' ? addr : `${addr.address}:${addr.port}`);
 });
 server.listen(PORT, '0.0.0.0');
+
+// --- Keep-alive ping (evita cold start) ---
+try {
+  const PUBLIC_URL = process.env.KEEP_ALIVE_URL || process.env.RENDER_EXTERNAL_URL || null;
+  if (PUBLIC_URL) {
+    const PING_EVERY_MS = 4 * 60 * 1000; // 4 minuti
+    const doPing = () => {
+      const base = PUBLIC_URL.replace(/\/$/, '');
+      const url = base + '/watch';
+      (globalThis.fetch ? fetch(url) : Promise.reject('no-fetch'))
+        .then(() => console.log('[keep-alive] WS ping OK'))
+        .catch(() => console.log('[keep-alive] WS ping failed'));
+    };
+    setInterval(doPing, PING_EVERY_MS);
+    console.log('[keep-alive] enabled ->', PUBLIC_URL);
+  }
+} catch {}

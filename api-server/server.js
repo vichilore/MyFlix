@@ -258,3 +258,19 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log("API server listening on", PORT);
 });
+
+// --- Keep-alive ping (evita cold start) ---
+try {
+  const PUBLIC_URL = process.env.KEEP_ALIVE_URL || process.env.RENDER_EXTERNAL_URL || null;
+  if (PUBLIC_URL) {
+    const PING_EVERY_MS = 4 * 60 * 1000; // 4 minuti
+    const doPing = () => {
+      const url = PUBLIC_URL.replace(/\/$/, '') + '/__debug?ts=' + Date.now();
+      (globalThis.fetch ? fetch(url) : Promise.reject('no-fetch'))
+        .then(() => console.log('[keep-alive] ping OK'))
+        .catch(() => console.log('[keep-alive] ping failed'));
+    };
+    setInterval(doPing, PING_EVERY_MS);
+    console.log('[keep-alive] enabled ->', PUBLIC_URL);
+  }
+} catch {}
