@@ -220,8 +220,9 @@ app.post("/progress/save", authRequired, async (req, res) => {
     await pool.query(
       `INSERT INTO public.watch_progress (user_id, series_id, ep_number, seconds, updated_at)
        VALUES ($1,$2,$3,$4,NOW())
-       ON CONFLICT (user_id, series_id, ep_number)
+       ON CONFLICT (user_id, series_id)
        DO UPDATE SET
+         ep_number = EXCLUDED.ep_number,
          seconds = EXCLUDED.seconds,
          updated_at = NOW()`,
       [req.user.id, series_id, ep_number, seconds]
