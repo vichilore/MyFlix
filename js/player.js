@@ -4,6 +4,9 @@ class Player {
   static currentSeries = null;
   static currentEp = null;
   static lastSave = 0;
+  static skipTimer = null;
+  static skipUI = null;
+  static isChangingEpisode = false;
 
   static init() {
     const overlay = document.getElementById('playerOverlay');
@@ -31,9 +34,19 @@ class Player {
       });
     }
     if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
-        const next = (this.currentEp || 1) + 1;
-        this.move(next);
+      nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const currentEp = this.currentEp || 1;
+        const next = currentEp + 1;
+        const max = this.currentSeries ? SeriesHelper.totalEpisodes(this.currentSeries) : 999;
+        
+        console.log('[Player] Next button clicked:', { currentEp, next, max });
+        
+        if (next <= max) {
+          this.move(next);
+        }
       });
     }
 
@@ -49,8 +62,6 @@ class Player {
     // tastiera
     overlay.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
-    // swipe down per chiudere su mobile
-    this.setupTouchGestures(overlay);
   }
 
   static play(series, ep) {
@@ -126,10 +137,19 @@ class Player {
   }
 
   static move(epNum) {
-    if (!this.currentSeries) return;
+    if (!this.currentSeries || this.isChangingEpisode) {
+      console.log('[Player] move blocked:', { hasSeries: !!this.currentSeries, isChanging: this.isChangingEpisode });
+      return;
+    }
 
     const max = SeriesHelper.totalEpisodes(this.currentSeries);
-    if (epNum < 1 || epNum > max) return;
+    if (epNum < 1 || epNum > max) {
+      console.log('[Player] move out of range:', { epNum, max });
+      return;
+    }
+
+    console.log('[Player] move to episode:', epNum);
+    this.isChangingEpisode = true;
 
     // se cambia stagione aggiorniamo la view di WatchPage
     if (SeriesHelper.isSeasonal(this.currentSeries) && window.WatchPage) {
@@ -141,10 +161,16 @@ class Player {
     }
 
     this.play(this.currentSeries, epNum);
+    
+    // Reset flag dopo un breve delay
+    setTimeout(() => {
+      this.isChangingEpisode = false;
+    }, 1000);
   }
 
   static close() {
     this.persistProgress();
+    this.hideSkipUI(); // Pulisci UI skip
 
     const overlay = document.getElementById('playerOverlay');
     const video   = document.getElementById('video');
@@ -212,11 +238,25 @@ class Player {
           WatchPage.updateResumeButton?.(this.currentSeries);
         }
       }
+
+      // Auto-skip negli ultimi 60 secondi
+      const remaining = d - t;
+      if (remaining <= 60 && remaining > 0) {
+        this.showSkipUI(Math.ceil(remaining));
+      } else {
+        this.hideSkipUI();
+      }
     }
   }
 
   static handleEnded() {
-    if (!this.currentSeries || !this.currentEp) return;
+    if (!this.currentSeries || !this.currentEp || this.isChangingEpisode) return;
+    
+    // Evita chiamate multiple
+    if (this._ending) return;
+    this._ending = true;
+
+    console.log('[Player] episode ended, auto-advancing');
 
     ProgressManager.markWatched(this.currentSeries.id, this.currentEp);
     ProgressManager.clearPosition(this.currentSeries.id, this.currentEp);
@@ -225,7 +265,14 @@ class Player {
       WatchPage.updateResumeButton?.(this.currentSeries);
     }
 
-    this.move(this.currentEp + 1);
+    const nextEp = this.currentEp + 1;
+    const max = SeriesHelper.totalEpisodes(this.currentSeries);
+    if (nextEp <= max) {
+      this.move(nextEp);
+    }
+
+    // Reset flag dopo un breve delay
+    setTimeout(() => { this._ending = false; }, 1000);
   }
 
   static handleKeyboard(e) {
@@ -263,33 +310,81 @@ class Player {
     }
   }
 
-  static setupTouchGestures(overlay) {
-    if (!overlay) return;
-    let startY = 0, dy = 0, swiping = false;
+  static showSkipUI(seconds) {
+    if (this.skipUI) {
+      this.updateSkipUI(seconds);
+      return;
+    }
 
-    overlay.addEventListener('touchstart', (e) => {
-      if (!e.touches?.length) return;
-      startY = e.touches[0].clientY;
-      dy = 0;
-      swiping = true;
-    }, { passive: true });
+    // Crea UI skip
+    const overlay = document.getElementById('playerOverlay');
+    const skipUI = document.createElement('div');
+    skipUI.className = 'skip-ui';
+    skipUI.innerHTML = `
+      <div class="skip-content">
+        <div class="skip-text">Prossimo episodio tra</div>
+        <div class="skip-countdown">${seconds}</div>
+        <button class="skip-btn" id="skipNowBtn">▶ Salta ora</button>
+        <button class="skip-btn skip-cancel" id="skipCancelBtn">✕</button>
+      </div>
+    `;
+    
+    overlay.appendChild(skipUI);
+    this.skipUI = skipUI;
 
-    overlay.addEventListener('touchmove', (e) => {
-      if (!swiping || !e.touches?.length) return;
-      dy = e.touches[0].clientY - startY;
-      if (dy > 10) {
-        overlay.style.transform = `translateY(${Math.min(dy, 120)}px)`;
-        overlay.style.opacity = String(Math.max(0.6, 1 - dy / 600));
-      }
-    }, { passive: true });
-
-    overlay.addEventListener('touchend', () => {
-      if (!swiping) return;
-      swiping = false;
-      overlay.style.transform = '';
-      overlay.style.opacity = '';
-      if (dy > 120) this.close();
+    // Event listeners
+    document.getElementById('skipNowBtn')?.addEventListener('click', () => {
+      this.skipToNext();
     });
+    
+    document.getElementById('skipCancelBtn')?.addEventListener('click', () => {
+      this.hideSkipUI();
+    });
+
+    // Timer per countdown
+    this.skipTimer = setInterval(() => {
+      const remaining = this.getRemainingTime();
+      if (remaining > 0) {
+        this.updateSkipUI(remaining);
+      } else {
+        this.skipToNext();
+      }
+    }, 1000);
+  }
+
+  static updateSkipUI(seconds) {
+    const countdown = this.skipUI?.querySelector('.skip-countdown');
+    if (countdown) {
+      countdown.textContent = seconds;
+    }
+  }
+
+  static hideSkipUI() {
+    if (this.skipTimer) {
+      clearInterval(this.skipTimer);
+      this.skipTimer = null;
+    }
+    if (this.skipUI) {
+      this.skipUI.remove();
+      this.skipUI = null;
+    }
+  }
+
+  static getRemainingTime() {
+    const video = document.getElementById('video');
+    if (!video || !video.duration) return 0;
+    return Math.ceil(video.duration - video.currentTime);
+  }
+
+  static skipToNext() {
+    this.hideSkipUI();
+    const nextEp = (this.currentEp || 1) + 1;
+    const max = this.currentSeries ? SeriesHelper.totalEpisodes(this.currentSeries) : 0;
+    if (nextEp <= max) {
+      this.move(nextEp);
+    } else {
+      this.close();
+    }
   }
 }
 

@@ -42,6 +42,7 @@ class Carousel {
 
     const card = document.createElement('div');
     card.className = size === 'xl' ? 'c-card c-card--xl' : 'c-card';
+    card.setAttribute('data-id', item.id);
 
     // BADGES (lingua)
     const badges = document.createElement('div');

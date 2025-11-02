@@ -203,6 +203,81 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .main-header{ position:fixed; top:-70px; left:48px; z-index:120; background:transparent; }
 .logo-img{ width:364px; height:364px; object-fit:contain; cursor:pointer; transition:.2s; }
 
+/* ===== AUTO-SKIP UI ===== */
+.skip-ui {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.skip-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.skip-text {
+  font-size: 12px;
+  color: #ccc;
+  text-align: center;
+}
+
+.skip-countdown {
+  font-size: 24px;
+  font-weight: 900;
+  color: #ff2a2a;
+  text-align: center;
+  min-width: 40px;
+}
+
+.skip-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.skip-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.skip-btn:first-of-type {
+  background: linear-gradient(180deg, #ff2a2a, #c91c1c);
+  border-color: #ff2a2a;
+}
+
+.skip-btn:first-of-type:hover {
+  background: linear-gradient(180deg, #ff4d4d, #e91e1e);
+}
+
+.skip-cancel {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+
 /* ===== PROFILE (header + menu) ===== */
 .profile-btn{
   position:fixed; top:18px; right:18px; z-index:121;

@@ -42,10 +42,17 @@ window.addEventListener("DOMContentLoaded", () => {
   if (typeof UserProfile !== "undefined") {
     UserProfile.init();
   }
-
+  
   // prima vista: Home
   UIManager.showHome();
-  HomePage.render();
-  AllPage.render();
+  HomePage.render().catch(err => {
+    console.error('HomePage.render error:', err);
+    // Fallback: mostra almeno i caroselli base
+    try {
+      AllPage.render();
+    } catch (e) {
+      console.error('AllPage.render fallback error:', e);
+    }
+  });
   
 });

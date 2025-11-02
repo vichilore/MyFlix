@@ -646,7 +646,9 @@ const CATALOG = [
       id: 'cyberpunkITA',
       image: 'https://i.imgur.com/qE2XtQ1.jpeg'
     }
-  )
+  ),
+  UrlParser.quickAddSeries('https://srv16-suisen.sweetpixel.org/DDL/ANIME/RagnaCrimson/RagnaCrimson_Ep_01_SUB_ITA.mp4', 'Ragna Crimson (SUB-ITA)', 24, {id: 'ragnacrimsonSUB-ITA', image: 'https://i.imgur.com/ULPYYVN.jpeg'}),
+  
 ];
 
 
