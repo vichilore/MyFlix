@@ -55,6 +55,30 @@ class Player {
       });
     }
 
+    // Add season navigation buttons to player bar
+    const seasonPrevBtn = document.createElement('button');
+    seasonPrevBtn.className = 'btn';
+    seasonPrevBtn.innerHTML = '⇽';
+    seasonPrevBtn.title = 'Stagione precedente';
+    seasonPrevBtn.style.display = 'none';
+    seasonPrevBtn.addEventListener('click', () => this.changeSeason(-1));
+
+    const seasonNextBtn = document.createElement('button');
+    seasonNextBtn.className = 'btn';
+    seasonNextBtn.innerHTML = '⇾';
+    seasonNextBtn.title = 'Prossima stagione';
+    seasonNextBtn.style.display = 'none';
+    seasonNextBtn.addEventListener('click', () => this.changeSeason(1));
+
+    // Insert season navigation buttons
+    const playerControls = document.querySelector('.player-controls');
+    if (playerControls) {
+      playerControls.insertBefore(seasonPrevBtn, playerControls.firstChild);
+      playerControls.appendChild(seasonNextBtn);
+      this.seasonPrevBtn = seasonPrevBtn;
+      this.seasonNextBtn = seasonNextBtn;
+    }
+
     // salvataggio avanzamento
     video.addEventListener('timeupdate', () => this.handleTimeUpdate());
     video.addEventListener('ended',      () => this.handleEnded());

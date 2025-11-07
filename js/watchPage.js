@@ -51,22 +51,77 @@ class WatchPage {
     picker.innerHTML = '';
 
     if (SeriesHelper.isSeasonal(series)) {
+      // Create Netflix-style season picker
+      picker.innerHTML = `
+        <button class="season-nav" id="seasonPrev" aria-label="Stagione precedente">‹</button>
+        <div class="season-container">
+          <div class="season-pills" id="seasonPills"></div>
+        </div>
+        <button class="season-nav" id="seasonNext" aria-label="Prossima stagione">›</button>
+        <div class="season-info" id="seasonInfo"></div>
+      `;
+
+      const pillsContainer = $('#seasonPills');
+      const prevBtn = $('#seasonPrev');
+      const nextBtn = $('#seasonNext');
+      const seasonInfo = $('#seasonInfo');
+
+      // Create season pills
       series.seasons.forEach((s, idx) => {
         const pill = document.createElement('button');
         pill.className = 'season-pill' + (idx === this.currentSeasonIndex ? ' active' : '');
         pill.textContent = s.title || `Stagione ${idx + 1}`;
+        pill.setAttribute('aria-label', `Seleziona ${s.title || `stagione ${idx + 1}`}`);
         pill.onclick = () => {
           this.currentSeasonIndex = idx;
           this.renderSeasons(series);
         };
-        picker.appendChild(pill);
+        pillsContainer.appendChild(pill);
       });
+
+      // Add navigation functionality
+      prevBtn.onclick = () => {
+        if (this.currentSeasonIndex > 0) {
+          this.currentSeasonIndex--;
+          this.renderSeasons(series);
+        }
+      };
+
+      nextBtn.onclick = () => {
+        if (this.currentSeasonIndex < series.seasons.length - 1) {
+          this.currentSeasonIndex++;
+          this.renderSeasons(series);
+        }
+      };
+
+      // Update navigation buttons state
+      prevBtn.disabled = this.currentSeasonIndex === 0;
+      nextBtn.disabled = this.currentSeasonIndex === series.seasons.length - 1;
+
+      // Update season info
+      const currentSeason = series.seasons[this.currentSeasonIndex];
+      seasonInfo.textContent = `${currentSeason.episodes || 0} episodi`;
+
+      // Add keyboard navigation
+      picker.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+          prevBtn.click();
+        } else if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+          nextBtn.click();
+        }
+      });
+
+      // Make season picker focusable for keyboard navigation
+      picker.setAttribute('tabindex', '0');
     } else {
-      this.currentSeasonIndex = 0;
-      const pill = document.createElement('button');
-      pill.className = 'season-pill active';
-      pill.textContent = 'Tutti gli episodi';
-      picker.appendChild(pill);
+      // Flat series structure
+      picker.innerHTML = `
+        <div class="season-container">
+          <div class="season-pills">
+            <button class="season-pill active">Tutti gli episodi</button>
+          </div>
+        </div>
+      `;
     }
 
     this.updateHeader(series);

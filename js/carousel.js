@@ -81,22 +81,22 @@ class Carousel {
 
     // PROGRESS BAR
     if (showProgress) {
-  let pct = 0
-  try {
-    if (window.ProgressManager && typeof ProgressManager.getLatestProgressPercent === 'function') {
-      pct = ProgressManager.getLatestProgressPercent(item) || 0
-    }
-  } catch (e) {
-    pct = 0
-  }
+      let pct = 0;
+      try {
+        if (window.ProgressManager && typeof ProgressManager.getLatestProgressPercent === 'function') {
+          pct = ProgressManager.getLatestProgressPercent(item.id) || 0;
+        }
+      } catch (e) {
+        pct = 0;
+      }
 
-  const bar = document.createElement('div')
-  bar.className = 'c-progress'
-  const fill = document.createElement('i')
-  fill.style.width = pct + '%'
-  bar.appendChild(fill)
-  card.appendChild(bar)
-}
+      const bar = document.createElement('div');
+      bar.className = 'c-progress';
+      const fill = document.createElement('i');
+      fill.style.width = pct + '%';
+      bar.appendChild(fill);
+      card.appendChild(bar);
+    }
 
     // CLICK HANDLER:
     // - se onClick è passato, usiamo quello (es. Film/Serie)
@@ -142,3 +142,5 @@ class Carousel {
 
 // di solito questo c'è già da qualche parte, nel dubbio:
 window.Carousel = Carousel;
+
+
