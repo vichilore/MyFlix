@@ -119,6 +119,31 @@ async function loadMovieById(id) {
     ? `https://image.tmdb.org/t/p/w780${tv.backdrop_path}`
     : "";
 
+  const genres = Array.isArray(tv.genres) && tv.genres.length
+    ? tv.genres.map(g => g.name).filter(Boolean)
+    : (Array.isArray(tv.genre_names) ? tv.genre_names : []);
+
+  const runtimeRaw = Array.isArray(tv.episode_run_time) && tv.episode_run_time.length
+    ? tv.episode_run_time[0]
+    : tv.episode_run_time;
+
+  const seasons = Array.isArray(tv.seasons)
+    ? tv.seasons
+        .map(season => ({
+          season_number: typeof season.season_number === "number"
+            ? season.season_number
+            : Number(season.season_number),
+          name: season.name || "",
+          episode_count: typeof season.episode_count === "number"
+            ? season.episode_count
+            : typeof season.episodes === "number"
+              ? season.episodes
+              : 0,
+          air_date: season.air_date || ""
+        }))
+        .filter(season => Number.isFinite(season.season_number))
+    : [];
+
   // default: stagione 1 episodio 1
   const url = `https://vixsrc.to/tv/${tv.id}/1/1?autoplay=true&primaryColor=B20710&lang=it`;
 
@@ -131,7 +156,10 @@ async function loadMovieById(id) {
     backdrop,
     overview: tv.overview || "",
     year,
-    rating: tv.vote_average || 0
+    rating: tv.vote_average || 0,
+    genres,
+    runtime: runtimeRaw || null,
+    seasons
   };
 }
 

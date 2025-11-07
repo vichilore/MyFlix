@@ -538,13 +538,43 @@
         return
       }
 
-            // 🔴 appena apro la pagina serie, segno già "continua a guardare"
-      // come Stagione 1 Episodio 1
-      if (window.IPTVProgress) {
-        window.IPTVProgress.saveEpisodeProgress(show, 1, 1)
+      const normalizedSeasons = Array.isArray(show.seasons)
+        ? show.seasons
+            .map(season => {
+              const seasonNumber = typeof season.season_number === 'number'
+                ? season.season_number
+                : Number(season.season_number)
+
+              return {
+                season_number: Number.isFinite(seasonNumber) ? seasonNumber : null,
+                name: season.name || '',
+                episode_count: typeof season.episode_count === 'number'
+                  ? season.episode_count
+                  : typeof season.episodes === 'number'
+                    ? season.episodes
+                    : 0,
+                air_date: season.air_date || ''
+              }
+            })
+            .filter(season => Number.isFinite(season.season_number))
+            .sort((a, b) => a.season_number - b.season_number)
+        : []
+
+      const filteredSeasons = normalizedSeasons.filter(season => season.season_number > 0)
+      const seasons = filteredSeasons.length ? filteredSeasons : normalizedSeasons
+
+      const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1
+
+      show = {
+        ...show,
+        seasons,
+        url: `https://vixsrc.to/tv/${show.id}/${defaultSeasonNumber}/1?autoplay=true&primaryColor=B20710&lang=it`
       }
 
-
+      // 🔴 appena apro la pagina serie, segno già "continua a guardare"
+      if (window.IPTVProgress) {
+        window.IPTVProgress.saveEpisodeProgress(show, defaultSeasonNumber, 1)
+      }
 
       // Render base (hero + player vuoto o url base)
       renderPlayerPage({ type: 'serie', item: show })
@@ -558,8 +588,11 @@
       episodesSection.className = 'iptv-episodes-section'
       episodesSection.innerHTML = `
         <div class="iptv-episodes-head">
-          <h2>Episodi - Stagione 1</h2>
-          <div class="iptv-episodes-sub">Seleziona un episodio per riprodurlo</div>
+          <div class="iptv-season-bar" role="tablist"></div>
+          <div class="iptv-episodes-headline">
+            <h2 class="iptv-episodes-title">Episodi <span class="iptv-current-season"></span></h2>
+            <div class="iptv-episodes-sub">Seleziona un episodio per riprodurlo</div>
+          </div>
         </div>
         <div class="iptv-episodes-list">
           <div class="iptv-loading">Caricamento episodi…</div>
@@ -567,23 +600,102 @@
       `
       container.appendChild(episodesSection)
 
+      const seasonBar = episodesSection.querySelector('.iptv-season-bar')
+      const currentSeasonLabel = episodesSection.querySelector('.iptv-current-season')
       const listHost = episodesSection.querySelector('.iptv-episodes-list')
 
-      if (window.IPTV && typeof window.IPTV.getSerieSeasonEpisodes === 'function') {
-        try {
-          const seasonNumber = 1
-          const episodes = await window.IPTV.getSerieSeasonEpisodes(show.id, seasonNumber)
+      if (!listHost) return
 
-          if (!episodes.length) {
-            listHost.innerHTML = `<p class="iptv-empty">Nessun episodio trovato.</p>`
+      const getSeasonDisplayName = season => {
+        if (!season) return ''
+
+        const fallback = `Stagione ${season.season_number}`
+
+        if (!season.name) {
+          return fallback
+        }
+
+        const normalizedName = season.name.trim()
+        const genericMatch = /^stagione\s+\d+$/i
+        const englishGenericMatch = /^season\s+\d+$/i
+
+        if (genericMatch.test(normalizedName) || englishGenericMatch.test(normalizedName)) {
+          return fallback
+        }
+
+        return normalizedName
+      }
+
+      const updateSeasonLabel = seasonNumber => {
+        if (!currentSeasonLabel) return
+        const season = seasons.find(s => s.season_number === seasonNumber)
+        const label = getSeasonDisplayName(season) || `Stagione ${seasonNumber}`
+        currentSeasonLabel.textContent = label
+      }
+
+      let currentSeasonNumber = defaultSeasonNumber
+      let seasonRequestId = 0
+
+      episodesSection.classList.toggle('no-seasons', seasons.length === 0)
+
+      if (seasonBar && seasons.length) {
+        seasons.forEach(season => {
+          const btn = document.createElement('button')
+          btn.type = 'button'
+          btn.className = 'iptv-season-btn'
+          btn.dataset.season = String(season.season_number)
+          btn.textContent = getSeasonDisplayName(season)
+
+          btn.addEventListener('click', () => {
+            if (currentSeasonNumber === season.season_number) return
+            loadSeason(season.season_number, { scrollToTop: true })
+          })
+
+          seasonBar.appendChild(btn)
+        })
+      }
+
+      const applySeasonActiveState = targetSeasonNumber => {
+        if (!seasonBar) return
+        seasonBar.querySelectorAll('.iptv-season-btn').forEach(btn => {
+          const btnSeason = Number(btn.dataset.season)
+          if (btnSeason === targetSeasonNumber) {
+            btn.classList.add('active')
+          } else {
+            btn.classList.remove('active')
+          }
+        })
+      }
+
+      async function loadSeason(targetSeasonNumber, { scrollToTop = false } = {}) {
+        if (!window.IPTV || typeof window.IPTV.getSerieSeasonEpisodes !== 'function') {
+          listHost.innerHTML = `<p class="iptv-empty">Funzione episodi non disponibile.</p>`
+          return
+        }
+
+        currentSeasonNumber = targetSeasonNumber
+        applySeasonActiveState(targetSeasonNumber)
+        updateSeasonLabel(targetSeasonNumber)
+
+        const requestId = ++seasonRequestId
+        listHost.innerHTML = `<div class="iptv-loading">Caricamento episodi…</div>`
+
+        try {
+          const episodes = await window.IPTV.getSerieSeasonEpisodes(show.id, targetSeasonNumber)
+
+          if (requestId !== seasonRequestId) {
             return
           }
 
-          listHost.innerHTML = ''
+          if (!episodes.length) {
+            listHost.innerHTML = `<p class="iptv-empty">Nessun episodio trovato per questa stagione.</p>`
+            return
+          }
+
+          const fragment = document.createDocumentFragment()
 
           episodes.forEach(ep => {
             const episodeNumber = ep.episode_number
-
             const item = document.createElement('button')
             item.type = 'button'
             item.className = 'iptv-episode-item'
@@ -599,35 +711,47 @@
             `
 
             item.addEventListener('click', () => {
-              const url = `https://vixsrc.to/tv/${show.id}/${seasonNumber}/${episodeNumber}`
+              const url = `https://vixsrc.to/tv/${show.id}/${targetSeasonNumber}/${episodeNumber}?autoplay=true&primaryColor=B20710&lang=it`
 
-              // aggiorno iframe
               iframe.src = url
 
-              // salva "continua a guardare" per questa serie
               if (window.IPTVProgress) {
-                window.IPTVProgress.saveEpisodeProgress(show, seasonNumber, episodeNumber)
+                window.IPTVProgress.saveEpisodeProgress(show, targetSeasonNumber, episodeNumber)
               }
 
-              // evidenzio l'episodio corrente
               listHost
                 .querySelectorAll('.iptv-episode-item')
                 .forEach(btn => btn.classList.remove('active'))
               item.classList.add('active')
             })
 
-            listHost.appendChild(item)
+            fragment.appendChild(item)
           })
 
-          // opzionale: evidenzia il primo episodio (non parte da solo)
+          listHost.innerHTML = ''
+          listHost.appendChild(fragment)
+
           const firstButton = listHost.querySelector('.iptv-episode-item')
           if (firstButton) {
             firstButton.classList.add('active')
           }
+
+          if (scrollToTop) {
+            listHost.scrollTo({ top: 0, behavior: 'smooth' })
+          }
         } catch (err) {
           console.error('[IPTV] errore caricamento episodi serie', err)
-          listHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento degli episodi.</p>`
+          if (requestId === seasonRequestId) {
+            listHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento degli episodi.</p>`
+          }
         }
+      }
+
+      updateSeasonLabel(currentSeasonNumber)
+      applySeasonActiveState(currentSeasonNumber)
+
+      if (window.IPTV && typeof window.IPTV.getSerieSeasonEpisodes === 'function') {
+        loadSeason(currentSeasonNumber)
       } else {
         listHost.innerHTML = `<p class="iptv-empty">Funzione episodi non disponibile.</p>`
       }
