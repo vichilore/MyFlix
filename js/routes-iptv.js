@@ -453,6 +453,72 @@
         iframe.focus()
       })
     }
+
+    // Bridge player events from vixsrc iframe to backend
+    if (iframe) {
+      addIptvEventBridge(iframe, { type, item })
+    }
+  }
+
+  // ---- Bridge postMessage events from vixsrc iframe ----
+  const lastSentByVideo = new Map()
+  function addIptvEventBridge(iframe, ctx) {
+    let allowedOrigin = '*'
+    try {
+      if (iframe && iframe.src) {
+        const u = new URL(iframe.src)
+        allowedOrigin = u.origin
+      }
+    } catch {}
+
+    function shouldSend(videoId, evName) {
+      const key = videoId + '|' + evName
+      const now = Date.now()
+      const last = lastSentByVideo.get(key) || 0
+      const minGap = evName === 'timeupdate' ? 3000 : 0
+      if (now - last >= minGap) {
+        lastSentByVideo.set(key, now)
+        return true
+      }
+      return false
+    }
+
+    function onMessage(e) {
+      if (!iframe || !e || !e.data) return
+      if (e.source !== iframe.contentWindow) return
+      if (allowedOrigin !== '*' && e.origin !== allowedOrigin) return
+
+      const msg = e.data
+      if (msg && msg.type === 'PLAYER_EVENT' && msg.data) {
+        const { event, currentTime, duration, video_id } = msg.data
+        if (typeof currentTime !== 'number' || typeof duration !== 'number') return
+        const vid = video_id != null ? String(video_id) : ''
+        if (!vid) return
+
+        // Save to backend if authenticated
+        if (window.Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
+          if (shouldSend(vid, String(event))) {
+            API.saveIptvEvent({ type: 'PLAYER_EVENT', data: { event, currentTime, duration, video_id: vid } })
+              .catch(() => {})
+          }
+        }
+      }
+    }
+
+    window.addEventListener('message', onMessage)
+
+    // Clean up when iptv page is hidden
+    const cleanup = () => window.removeEventListener('message', onMessage)
+    try {
+      const root = ensureRoot()
+      const observer = new MutationObserver(() => {
+        if (!document.body.contains(root)) {
+          cleanup()
+          observer.disconnect()
+        }
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+    } catch {}
   }
 
   // ---------- PLAYER FILM ----------

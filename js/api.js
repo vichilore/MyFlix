@@ -189,6 +189,22 @@ const API = (() => {
     return authedRequest("GET", "/progress/get");
   }
 
+  // --- IPTV (vixsrc) real-time events/progress ---
+  function saveIptvEvent(evt) {
+    // Accept either {type:'PLAYER_EVENT', data:{...}} or just {event,currentTime,duration,video_id}
+    const payload = evt && evt.type === 'PLAYER_EVENT' ? evt : { type: 'PLAYER_EVENT', data: evt };
+    return authedRequest("POST", "/iptv/event", payload);
+  }
+
+  function getIptvPosition(video_id) {
+    const v = String(video_id);
+    return authedRequest("GET", "/iptv/position?video_id=" + encodeURIComponent(v));
+  }
+
+  function getIptvResume(limit = 20) {
+    return authedRequest("GET", "/iptv/resume?limit=" + encodeURIComponent(limit));
+  }
+
   return {
     signup,
     login,
@@ -198,6 +214,9 @@ const API = (() => {
     switchCurrentProfile,
     setPublicActivity,
     saveProgress,
-    getProgress
+    getProgress,
+    saveIptvEvent,
+    getIptvPosition,
+    getIptvResume
   };
 })();
