@@ -1,6 +1,6 @@
 // js/carousel.js
 class Carousel {
-  static create({ id, title, items, size = 'default', showProgress = false }) {
+  static create({ id, title, items, size = 'default', showProgress = false, onClick }) {
     if (!items || !items.length) return null;
 
     const row = document.createElement('div');
@@ -29,14 +29,14 @@ class Carousel {
     requestAnimationFrame(updateFades);
 
     for (const item of items) {
-      track.appendChild(this.createCard(item, size, showProgress));
+      track.appendChild(this.createCard(item, size, showProgress, onClick));
     }
 
     this.setupControls(row, track, id, size);
     return row;
   }
 
-  static createCard(item, size, showProgress) {
+  static createCard(item, size, showProgress, onClick) {
     const cell = document.createElement('div');
     cell.className = 'c-item';
 
@@ -81,16 +81,34 @@ class Carousel {
 
     // PROGRESS BAR
     if (showProgress) {
-      const pct = ProgressManager.getLatestProgressPercent(item);
-      const bar = document.createElement('div');
-      bar.className = 'c-progress';
-      const fill = document.createElement('i');
-      fill.style.width = pct + '%';
-      bar.appendChild(fill);
-      card.appendChild(bar);
+  let pct = 0
+  try {
+    if (window.ProgressManager && typeof ProgressManager.getLatestProgressPercent === 'function') {
+      pct = ProgressManager.getLatestProgressPercent(item) || 0
     }
+  } catch (e) {
+    pct = 0
+  }
 
-    card.addEventListener('click', () => WatchPage.open(item));
+  const bar = document.createElement('div')
+  bar.className = 'c-progress'
+  const fill = document.createElement('i')
+  fill.style.width = pct + '%'
+  bar.appendChild(fill)
+  card.appendChild(bar)
+}
+
+    // CLICK HANDLER:
+    // - se onClick è passato, usiamo quello (es. Film/Serie)
+    // - altrimenti usiamo WatchPage.open (comportamento anime esistente)
+    card.addEventListener('click', () => {
+      if (typeof onClick === 'function') {
+        onClick(item);
+      } else if (window.WatchPage && typeof WatchPage.open === 'function') {
+        WatchPage.open(item);
+      }
+    });
+
     cell.appendChild(card);
     return cell;
   }
@@ -109,12 +127,18 @@ class Carousel {
     const prev = row.querySelector(`#${id}-prev`);
     const next = row.querySelector(`#${id}-next`);
 
+   // dentro setupControls, sostituisci la funzione step()
     const step = () => {
       const c = track.querySelector('.c-item');
-      return (c ? c.getBoundingClientRect().width : 280) * (size === 'xl' ? 1.2 : 3);
+      const w = c ? c.getBoundingClientRect().width : 280;
+      const visible = Math.floor(track.clientWidth / w) || 1;
+      return w * (visible - 0.5); // sfoglia quasi una pagina
     };
 
     prev.onclick = () => track.scrollBy({ left: -step(), behavior: 'smooth' });
     next.onclick = () => track.scrollBy({ left: step(), behavior: 'smooth' });
   }
 }
+
+// di solito questo c'è già da qualche parte, nel dubbio:
+window.Carousel = Carousel;

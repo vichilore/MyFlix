@@ -1,2 +1,13 @@
+[build]
+  command = ""
+  publish = "."
+
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# SPA (se usi hash router puoi anche non servire questo)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

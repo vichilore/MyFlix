@@ -7,6 +7,7 @@ class Player {
   static skipTimer = null;
   static skipUI = null;
   static isChangingEpisode = false;
+  static _ending = false;
 
   static init() {
     const overlay = document.getElementById('playerOverlay');
@@ -20,6 +21,10 @@ class Player {
       console.warn("Player.init: elementi video mancanti");
       return;
     }
+
+    // salva ref per gesture
+    this.overlay = overlay;
+    this.video = video;
 
     // chiudi player
     if (closeBtn) {
@@ -37,13 +42,13 @@ class Player {
       nextBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const currentEp = this.currentEp || 1;
         const next = currentEp + 1;
         const max = this.currentSeries ? SeriesHelper.totalEpisodes(this.currentSeries) : 999;
-        
+
         console.log('[Player] Next button clicked:', { currentEp, next, max });
-        
+
         if (next <= max) {
           this.move(next);
         }
@@ -62,6 +67,51 @@ class Player {
     // tastiera
     overlay.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
+    // === [AGGIUNTA] Gesture touch iPad: tap singolo / doppio tap ±10s ===
+    // evita conflitti con elementi UI (skip-ui, bottoni ecc.)
+    let lastTap = 0;
+    overlay.addEventListener('touchend', (e) => {
+      // non gestire se si è toccato un controllo esplicito
+      const t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+
+      const targetIsControl =
+        e.target.closest('.skip-ui') ||
+        e.target.closest('[data-action]') ||
+        e.target.closest('button') ||
+        e.target.closest('a');
+
+      if (targetIsControl) return;
+
+      const now = Date.now();
+      const dt = now - lastTap;
+      lastTap = now;
+
+      const x = t.clientX;
+      const mid = window.innerWidth / 2;
+
+      if (dt < 280) {
+        // doppio tap -> seek ±10s
+        if (!this.video) return;
+        const delta = (x < mid) ? -10 : +10;
+        const dur = this.video.duration || 1e9;
+        try {
+          this.video.currentTime = Math.min(dur, Math.max(0, (this.video.currentTime || 0) + delta));
+        } catch (err) {
+          console.warn('[Player] seek (double tap) error', err);
+        }
+      } else {
+        // tap singolo -> toggle controlli nativi per 2.5s
+        if (!this.video) return;
+        if (this.video.hasAttribute('controls')) {
+          this.video.removeAttribute('controls');
+        } else {
+          this.video.setAttribute('controls', '');
+          setTimeout(() => { try { this.video.removeAttribute('controls'); } catch {} }, 2500);
+        }
+      }
+    }, { passive: true });
+    // === fine aggiunta gesture ===
   }
 
   static play(series, ep) {
@@ -161,7 +211,7 @@ class Player {
     }
 
     this.play(this.currentSeries, epNum);
-    
+
     // Reset flag dopo un breve delay
     setTimeout(() => {
       this.isChangingEpisode = false;
@@ -251,7 +301,7 @@ class Player {
 
   static handleEnded() {
     if (!this.currentSeries || !this.currentEp || this.isChangingEpisode) return;
-    
+
     // Evita chiamate multiple
     if (this._ending) return;
     this._ending = true;
@@ -269,6 +319,9 @@ class Player {
     const max = SeriesHelper.totalEpisodes(this.currentSeries);
     if (nextEp <= max) {
       this.move(nextEp);
+    } else {
+      // serie finita -> chiudi il player
+      this.close();
     }
 
     // Reset flag dopo un breve delay
@@ -328,7 +381,7 @@ class Player {
         <button class="skip-btn skip-cancel" id="skipCancelBtn">✕</button>
       </div>
     `;
-    
+
     overlay.appendChild(skipUI);
     this.skipUI = skipUI;
 
@@ -336,7 +389,7 @@ class Player {
     document.getElementById('skipNowBtn')?.addEventListener('click', () => {
       this.skipToNext();
     });
-    
+
     document.getElementById('skipCancelBtn')?.addEventListener('click', () => {
       this.hideSkipUI();
     });

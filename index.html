@@ -2,151 +2,87 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VichiFlix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AmiciCari.tv</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
   <div class="app">
-    <!-- HEADER -->
-    <header class="main-header">
+    <!-- ===== TOPBAR FISSA ===== -->
+   <!-- ===== TOPBAR FISSA ===== -->
+    <header class="topbar">
       <div class="brand" id="brandLogo">
-        <img src="AMICI-Photoroom.png" alt="VichiFlix Logo" class="logo-img" />
+        <img src="AMICI-Photoroom.png" alt="AmiciCari Logo" class="logo-img" />
       </div>
 
-      <!-- Profile entrypoint -->
+      <!-- BOX CENTRALE con il nav dentro -->
+      <div class="topbar-center">
+        <nav class="nav-center-box" aria-label="Navigazione principale">
+          <ul>
+            <li class="active"><a href="#" id="navHomeBtn">Home</a></li>
+            <li><a href="#" id="navAllBtn">Tutti</a></li>
+            <li><a href="#/film" id="nav-film">Film</a></li>
+            <li><a href="#/serie" id="nav-serie">Serie</a></li>
+          </ul>
+        </nav>
+      </div>
+
       <button id="profileBtn" class="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profilo">
         <img id="profileAvatar" class="profile-avatar" alt="Avatar" />
         <span id="profileName" class="profile-name">Profilo</span>
       </button>
     </header>
 
-    <!-- Profile menu -->
+
+    <!-- MENU PROFILO (assoluto, fuori dal flusso) -->
     <div id="profileMenu" class="profile-menu" role="menu" aria-hidden="true">
       <button id="profileSwitch" class="profile-menu-item" role="menuitem">Cambia profilo</button>
       <button id="profileLogout" class="profile-menu-item" role="menuitem">Logout</button>
     </div>
 
-    <!-- NAVIGATION -->
-    <nav class="nav-center-box">
-      <ul>
-        <li class="active"><a href="#" id="navHomeBtn">Home</a></li>
-        <li><a href="#" id="navAllBtn">Tutti</a></li>
-        <li><a href="#" id="wtHomeBar">Guarda Insieme</a></li>
-      </ul>
-    </nav>
-
+    <!-- Spaziatore snap per sticky/snap (se usato) -->
     <div class="snap-dock" aria-hidden="true"></div>
 
-    <!-- HOME -->
-    <section id="home">
-      <div class="container">
-        <div id="searchStatus" class="search-status" style="display:none"></div>
-      </div>
-      
-      <div id="homeCarousels" class="container"></div>
-    </section>
-
-
-
-    <!-- TUTTI -->
-    <section id="all" class="all" style="display:none">
-      <div class="container">
-        <h2 class="all-title">Tutti gli anime</h2>
-        <div id="allGrid" class="all-grid"></div>
-      </div>
-    </section>
-
-    <!-- WATCH -->
-    <section id="watch" class="watch" style="display:none">
-      <div class="watch-hero">
-        <img id="watchBanner" class="watch-banner" src="" alt="Banner serie" />
-        <div class="watch-hero-overlay">
-          <h1 id="watchTitle">Titolo Anime</h1>
-          <div class="watch-hero-actions">
-            <button id="watchResumeBtn" class="btn danger" style="display:none;">▶ Riprendi</button>
-          </div>
+    <!-- ===== CONTENUTO PAGINA ===== -->
+    <main class="page" role="main">
+      <!-- HOME -->
+      <section id="home">
+        <div class="container">
+          <div id="homeResume"></div>
+          <div id="searchStatus" class="search-status" style="display:none"></div>
         </div>
-      </div>
+        <div id="homeCarousels" class="container"></div>
+      </section>
 
-      <div class="watch-container">
-        <div id="seasonPicker" class="season-picker"></div>
-        <div id="episodeList" class="episode-list"></div>
-      </div>
-    </section>
+      <!-- TUTTI -->
+      <section id="all" class="all" style="display:none">
+        <div class="container">
+          <h2 class="all-title">Tutti gli anime</h2>
+          <div id="allGrid" class="all-grid"></div>
+        </div>
+      </section>
 
-    <!-- WATCH TOGETHER -->
-    <section id="wt" class="wt" aria-label="Guarda Insieme" style="display:none">
-      <div class="container wt-layout">
-        <div class="wt-card">
-          <h2 class="wt-title">Guarda Insieme</h2>
-          <p class="wt-desc">Sincronizza il player con gli amici in tempo reale.</p>
-
-          <!-- STEP 1: non sono in stanza -->
-          <div id="wtNotInRoom" class="wt-step">
-            <div class="wt-block">
-              <label class="wt-label">Entra in una stanza esistente</label>
-              <div class="wt-row">
-                <input
-                  id="wtJoinCode"
-                  class="inp code"
-                  placeholder="WT-ABC12"
-                  maxlength="16"
-                  autocomplete="off"
-                />
-                <button id="wtJoinBtn" class="btn primary" type="button">Entra</button>
-              </div>
-            </div>
-
-            <div class="wt-sep"><span>oppure</span></div>
-
-            <div class="wt-block">
-              <button id="wtCreateBtn" class="btn danger" type="button">
-                + Crea nuova stanza
-              </button>
-            </div>
-          </div>
-
-          <!-- STEP 2: dentro la stanza -->
-          <div id="wtInRoom" class="wt-step" style="display:none">
-            <div class="wt-room-info">
-              <div class="wt-room-main">
-                <div class="wt-room-label">Codice stanza</div>
-                <div class="wt-room-code" id="wtRoomCode">WT-XXXXX</div>
-              </div>
-              <button id="wtCopyBtn" class="btn" type="button">Copia link invito</button>
-            </div>
-
-            <div class="wt-block">
-              <div class="wt-room-label">Partecipanti</div>
-              <ul id="wtUsers" class="wt-users">
-                <!-- riempito via JS -->
-              </ul>
-            </div>
-
-            <div class="wt-block">
-              <div class="wt-room-label">Ruolo</div>
-              <div id="wtRoleBadge" class="wt-role-badge">viewer</div>
-              <p class="wt-hint">
-                Solo l'host controlla play/pausa/seek. Gli altri vengono sincronizzati.
-              </p>
-            </div>
-
-            <div class="wt-actions">
-              <button id="wtGoWatchBtn" class="btn primary" type="button">
-                Vai al catalogo
-              </button>
-              <button id="wtLeaveBtn" class="btn" type="button">
-                Esci dalla stanza
-              </button>
+      <!-- WATCH -->
+      <section id="watch" class="watch" style="display:none">
+        <div class="watch-hero">
+          <img id="watchBanner" class="watch-banner" src="" alt="Banner serie" />
+          <div class="watch-hero-overlay">
+            <h1 id="watchTitle">Titolo Anime</h1>
+            <div class="watch-hero-actions">
+              <button id="watchResumeBtn" class="btn danger" style="display:none;">▶ Riprendi</button>
             </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- PLAYER OVERLAY -->
+        <div class="watch-container">
+          <div id="seasonPicker" class="season-picker"></div>
+          <div id="episodeList" class="episode-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- PLAYER OVERLAY (fuori da <main> per coprire tutto quando attivo) -->
     <div id="playerOverlay" class="player-overlay" style="display:none">
       <div class="player-shell">
         <div class="player-bar">
@@ -177,47 +113,20 @@
   </button>
 
   <!-- SEARCH PANEL -->
-  <div id="searchPanel" class="search-panel">
+  <div id="searchPanel" class="search-panel" role="dialog" aria-modal="true" aria-hidden="true">
     <input id="searchInput" class="search-inp" type="search" autocomplete="off" placeholder="Cerca anime… (titolo o lingua)" />
     <button id="searchClear" class="search-clear" type="button">✕</button>
   </div>
 
-  <!-- AUTH MODAL -->
-  <div id="authModal" class="auth-modal-backdrop" style="display:none">
-    <div class="auth-modal-card">
-      <div class="auth-tabs">
-        <button class="auth-tab-btn active" data-tab="login">Login</button>
-        <button class="auth-tab-btn" data-tab="signup">Signup</button>
-      </div>
-
-      <!-- LOGIN PANEL -->
-      <div class="auth-panel" data-panel="login">
-        <label>Username</label>
-        <input id="login_username" placeholder="es. lorenzo" />
-        <label>PIN</label>
-        <input id="login_pin" type="password" placeholder="4-6 cifre" />
-        <button id="login_btn" class="auth-primary-btn">Entra</button>
-        <div id="login_error" class="auth-error"></div>
-      </div>
-
-      <!-- SIGNUP PANEL -->
-      <div class="auth-panel" data-panel="signup" style="display:none;">
-        <label>Username</label>
-        <input id="signup_username" placeholder="es. lorenzo2" />
-        <label>PIN (4-6 cifre)</label>
-        <input id="signup_pin" type="password" placeholder="1234" />
-        <label>Avatar URL (opzionale)</label>
-        <input id="signup_avatar" placeholder="https://i.imgur.com/qualcosa.png" />
-        <button id="signup_btn" class="auth-primary-btn">Crea account</button>
-        <div id="signup_error" class="auth-error"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- ================== SCRIPT ORDER ================== -->
   <script src="js/config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.supabase.js"></script>
+  <script>
+    window.CONFIG = window.CONFIG || {};
+    const isIPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+    const forceTablet = window.CONFIG.IS_TABLET_LAYOUT === true;
+    if (isIPad || forceTablet) document.documentElement.classList.add('tablet');
+  </script>
+
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
 
@@ -232,10 +141,12 @@
   <script src="js/homePage.js"></script>
   <script src="js/allPage.js"></script>
   <script src="js/watchPage.js"></script>
-  
+
   <script src="js/search.js"></script>
-  <script src="js/watchTogether.js"></script>
   <script src="js/dockMetrics.js"></script>
+  <script src="js/iptvProgress.js"></script>
+  <script src="js/iptv.js"></script>
+  <script src="js/routes-iptv.js"></script>
   <script src="js/ui-authmodal.js"></script>
 
   <script src="js/ui-manager.js"></script>

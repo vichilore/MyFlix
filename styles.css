@@ -9,11 +9,18 @@
   --ipad-card: clamp(220px, 30vw, 320px);
   --search-gap: 400px;
   --search-ico-size: 40px;
+  --font-base: clamp(14px, 1.4vw, 16px);
+  --font-h1: clamp(22px, 3.2vw, 32px);
+  --radius: 16px;
+  --hit: 44px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --ring: rgba(229, 9, 20, .45);
 }
 
 *{ box-sizing:border-box; }
 html,body{ overflow-x:hidden; scroll-padding-top:calc(var(--dock-h) + var(--dock-gap)); }
-body{ margin:0; background:var(--bg); color:var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+body{ margin:0; background:var(--bg); color:var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: var(--font-base); }
 
 /* sfondo leggero */
 body::before{
@@ -36,22 +43,6 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .container, #homeCarousels{ width:min(96vw, 1480px); margin-inline:auto; padding-inline:16px; }
 .app-footer{ text-align:center; color:var(--muted); font-size:12px; }
 
-/* NAV PILL */
-.nav-center-box{
-  position:fixed; top:74px; left:50%; transform:translateX(-50%);
-  z-index:110; display:inline-flex; align-items:center; gap:14px;
-  height:64px; padding:10px 14px; border-radius:16px;
-  background:#111114; border:1px solid var(--stroke);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 6px 22px rgba(0,0,0,.45);
-  backdrop-filter: blur(8px);
-}
-.nav-center-box nav{ display:flex; align-items:center; }
-.nav-center-box ul{ list-style:none; display:flex; gap:26px; margin:0; padding:0 6px; }
-.nav-center-box li{ display:inline-flex; align-items:center; height:40px; padding:0 14px; border-radius:10px; transition:.2s; }
-.nav-center-box a{ text-decoration:none; color:#d9d9de; font-size:.95rem; font-weight:500; letter-spacing:.2px; }
-.nav-center-box li:hover{ background:rgba(255,255,255,.06); }
-.nav-center-box li.active{ background:rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.35); }
-.nav-center-box li.active a{ color:#fff; }
 
 /* 🔎 FAB cerca */
 .search-ico{
@@ -118,22 +109,38 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   .search-panel{ right: 12px; width: min(94vw, 420px); }
 }
 
-/* NAV PILL */
+/* NAV PILL (fixed separata) */
 .nav-center-box{
-  position:fixed; top:74px; left:50%; transform:translateX(-50%);
-  z-index:110; display:inline-flex; align-items:center; gap:14px;
-  height:64px; padding:10px 14px; border-radius:16px;
+  position: fixed;
+  top: calc(var(--safe-top, 0px) + var(--topbar-h, 64px) - 67px); /* <-- safe & reattivo */
+  left: 50%; transform: translateX(-50%);
+  z-index: 600; /* più bassa del player overlay, più alta dei caroselli */
+  display:inline-flex; align-items:center; gap:14px;
+  min-height:48px; height:auto; padding:8px 12px; border-radius:16px;
   background:#111114; border:1px solid var(--stroke);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 6px 22px rgba(0,0,0,.45);
   backdrop-filter: blur(8px);
+  will-change: transform; /* riduce blur */
 }
 .nav-center-box nav{ display:flex; align-items:center; }
-.nav-center-box ul{ list-style:none; display:flex; gap:26px; margin:0; padding:0 6px; }
+.nav-center-box ul{ list-style:none; display:flex; gap:22px; margin:0; padding:0 6px; }
 .nav-center-box li{ display:inline-flex; align-items:center; height:40px; padding:0 14px; border-radius:10px; transition:.2s; }
 .nav-center-box a{ text-decoration:none; color:#d9d9de; font-size:.95rem; font-weight:500; letter-spacing:.2px; }
 .nav-center-box li:hover{ background:rgba(255,255,255,.06); }
 .nav-center-box li.active{ background:rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 2px 8px rgba(0,0,0,.35); }
 .nav-center-box li.active a{ color:#fff; }
+
+/* riserva spazio sotto la pill per non coprire i contenuti */
+.page{
+  padding-top: calc(var(--topbar-h, 64px) + var(--safe-top, 0px) + 72px);
+}
+
+/* iPad adattamenti */
+@media (max-width: 1024px){
+  .nav-center-box{ padding:6px 10px; }
+  .nav-center-box ul{ gap:16px; }
+}
+
 
 /* 🔎 FAB cerca */
 .search-ico{
@@ -835,3 +842,639 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   margin-top:8px;
   text-align:center;
 }
+/* ===== IPTV PAGE (TMDB + VixSrc) ===== */
+
+#iptv-root.iptv-page {
+  padding: 80px 0 40px; /* lascia spazio per la navbar sticky/top, se c'è */
+}
+
+.iptv-page {
+  position: fixed;
+  inset: 0;                 /* top:0 right:0 bottom:0 left:0 */
+  z-index: 50;              /* puoi alzare/abbassare se serve */
+  background: #050509;      /* sfondo dark stile app */
+  overflow-y: auto;
+  padding-top: 80px;        /* margine per non stare sotto la navbar (aggiusta se serve) */
+}
+
+.iptv-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+
+/* Hero / carousel XL */
+
+.iptv-hero {
+  margin-bottom: 32px;
+}
+
+.iptv-hero-header h1 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.iptv-hero-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted, #a1a1b3);
+}
+
+.iptv-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+/* fila orizzontale tipo Netflix */
+
+/* fila orizzontale tipo Netflix */
+.iptv-hero-row {
+  margin-top: 18px;
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scroll-snap-type: x mandatory;
+}
+
+.iptv-hero-row::-webkit-scrollbar {
+  height: 6px;
+}
+.iptv-hero-row::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.25);
+  border-radius: 999px;
+}
+
+/* card XL */
+.iptv-hero-card {
+  flex: 0 0 260px;      /* PRIMA era ~200px */
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  scroll-snap-align: start;
+  transform-origin: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.iptv-hero-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 22px 55px rgba(0,0,0,.65);
+}
+
+.iptv-hero-poster {
+  width: 100%;
+  padding-top: 155%; /* verticale importante, tipo locandina cinema */
+  background-size: cover;
+  background-position: center;
+  background-color: #202024;
+}
+
+.iptv-hero-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 10px 10px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.0));
+}
+
+.iptv-hero-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.iptv-hero-meta {
+  font-size: 11px;
+  color: var(--muted, #b0b0c1);
+}
+
+/* sezioni sotto il hero */
+
+.iptv-section {
+  margin-top: 24px;
+}
+
+.iptv-section-header h2 {
+  font-size: 20px;
+  margin: 0 0 10px;
+}
+
+/* griglia carte “normali” */
+
+.iptv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.iptv-card {
+  background: #131318;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.iptv-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.iptv-card-poster {
+  width: 100%;
+  padding-top: 145%;
+  background-size: cover;
+  background-position: center;
+  background-color: #202024;
+}
+
+.iptv-card-poster--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted, #b0b0c1);
+  font-size: 12px;
+}
+
+.iptv-card-meta {
+  padding: 10px 12px 12px;
+}
+
+.iptv-card-meta h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.iptv-card-meta p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted, #a1a1b3);
+}
+
+.iptv-card .play-btn {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--accent, #e50914);
+  color: #fff;
+  cursor: pointer;
+}
+
+.iptv-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.55);
+  background: #191922;
+}
+
+/* messaggi vari */
+
+.iptv-loading,
+.iptv-empty {
+  font-size: 13px;
+  color: var(--muted, #a1a1b3);
+  margin-top: 24px;
+}
+/* PLAYER interno IPTV */
+
+.iptv-player {
+  margin-bottom: 24px;
+}
+
+.iptv-player-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #121217;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.6);
+}
+
+.iptv-player-empty {
+  justify-content: center;
+  align-items: center;
+  min-height: 160px;
+}
+
+.iptv-player-info h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.iptv-player-info p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted, #a1a1b3);
+}
+
+.iptv-player-frame-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 */
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.iptv-player-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.iptv-player-page {
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+/* Banner grosso stile anime, al centro */
+
+.iptv-hero-card {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background-color: #18181f;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 2.5rem;
+  min-height: 260px;
+}
+
+.iptv-hero-card__overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.3)),
+    linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+}
+
+.iptv-hero-card__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 1.8rem;
+  align-items: center;
+  padding: 2rem 2.4rem;
+}
+
+@media (max-width: 900px) {
+  .iptv-hero-card__content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.iptv-hero-card__poster-wrap {
+  flex-shrink: 0;
+}
+
+.iptv-hero-card__poster {
+  width: 210px;
+  border-radius: 0.8rem;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.7);
+  object-fit: cover;
+}
+
+@media (max-width: 700px) {
+  .iptv-hero-card__poster {
+    width: 160px;
+  }
+}
+
+.iptv-hero-card__text {
+  max-width: 640px;
+}
+
+/* Titolo + info (riuso delle classi che avevamo già) */
+
+.iptv-hero-title {
+  font-size: 2.1rem;
+  line-height: 1.1;
+  margin: 0 0 0.6rem;
+}
+
+@media (max-width: 700px) {
+  .iptv-hero-title {
+    font-size: 1.8rem;
+  }
+}
+
+.iptv-hero-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #b3b3b3;
+  margin-bottom: 0.35rem;
+}
+
+.iptv-hero-sub span + span {
+  position: relative;
+}
+
+.iptv-hero-sub span + span::before {
+  content: "•";
+  margin-right: 0.4rem;
+  color: #777;
+}
+
+.iptv-hero-vote {
+  background: #e50914;
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.iptv-hero-genres {
+  font-size: 0.85rem;
+  color: #d0d0d0;
+  margin-bottom: 0.7rem;
+}
+
+.iptv-hero-overview {
+  font-size: 0.95rem;
+  color: #e5e5e5;
+  max-width: 40rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Bottoni stile Netflix */
+
+.iptv-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.iptv-btn {
+  border-radius: 0.4rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.6rem 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.iptv-btn--primary {
+  background: #e50914;
+  color: #fff;
+}
+
+.iptv-btn--primary:hover {
+  background: #f40612;
+}
+
+.iptv-btn--ghost {
+  background: rgba(109,109,110,0.4);
+  color: #fff;
+}
+
+.iptv-btn--ghost:hover {
+  background: rgba(109,109,110,0.6);
+}
+
+/* Sezione player sotto il banner */
+
+.iptv-player-section {
+  margin-top: 0.5rem;
+}
+
+.iptv-player-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.iptv-player-section__head h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* riuso delle classi frame che avevamo già */
+
+.iptv-player-frame-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: 56.25%; /* 16:9 */
+  border-radius: 0.8rem;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+  background: #000;
+}
+
+.iptv-player-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.iptv-search-bar {
+  margin-bottom: 1rem;
+}
+
+.iptv-search-input {
+  width: 100%;
+  max-width: 360px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  outline: none;
+  background: #18181f;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.iptv-search-input::placeholder {
+  color: #777;
+}
+
+
+/* ============================
+   IPTV: EPISODI SERIE TV
+   (lista episodi + styling stagioni)
+============================ */
+
+.iptv-episodes-section {
+  margin-top: 1.6rem;
+  padding: 1.1rem 1.1rem 1.3rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, #111 0, #151515 45%, #090909 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.7);
+}
+
+.iptv-episodes-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.7rem;
+}
+
+.iptv-episodes-head h2 {
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.iptv-episodes-sub {
+  font-size: 0.85rem;
+  color: var(--muted, #b3b3b3);
+}
+
+/* la barra con le stagioni riusa già
+   .season-picker e .season-pill che hai sopra */
+
+/* lista episodi */
+
+.iptv-episodes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* scrollbar carina per la lista episodi */
+.iptv-episodes-list::-webkit-scrollbar {
+  width: 6px;
+}
+.iptv-episodes-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.iptv-episodes-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+}
+
+/* singolo episodio */
+
+.iptv-episode-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.8rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition:
+    background 0.18s ease-out,
+    border-color 0.18s ease-out,
+    transform 0.18s ease-out,
+    box-shadow 0.18s ease-out;
+}
+
+.iptv-episode-item:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.22);
+  transform: translateY(-1px);
+}
+
+.iptv-episode-item.active {
+  background: linear-gradient(90deg, rgba(255,42,42,0.75), rgba(255,42,42,0.18));
+  border-color: #ff2a2a;
+  box-shadow: 0 14px 40px rgba(255,42,42,0.5);
+}
+
+/* testo interno episodio */
+
+.iptv-episode-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.iptv-episode-number {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.7);
+}
+
+.iptv-episode-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.iptv-episode-overview {
+  font-size: 0.8rem;
+  color: var(--muted, #b3b3b3);
+  line-height: 1.5;
+}
+
+/* responsive touch-up */
+
+@media (max-width: 768px) {
+  .iptv-episodes-section {
+    margin-top: 1.2rem;
+    padding: 0.9rem 0.9rem 1.1rem;
+  }
+}
+
+
+
+/* Card & poster coerenti */
+.c-card, .all-card { border-radius: var(--radius); }
+.c-poster, .all-poster { aspect-ratio: 2/3; }
+
+/* Header/Logo responsive */
+.main-header{ position:fixed; top:max(8px, calc(var(--safe-top) + 8px)); left:16px; z-index:120; }
+.logo-img{ width: clamp(140px, 24vw, 260px); height:auto; }
+
+/* Player safe-area & controls */
+.player-overlay{ padding: max(16px, var(--safe-top)) 16px max(16px, var(--safe-bottom)) 16px; }
+.player-bar{ padding-block: 10px; }
+.btn{ min-width: var(--hit); min-height: var(--hit); border-radius:12px; }
+.btn:focus-visible{ outline: 2px solid rgba(255,255,255,.5); outline-offset: 2px; }
+
+/* Breakpoints iPad Air/Pro */
+@media (min-width: 744px) and (max-width: 1180px){
+  .carousel{ scroll-padding-left: 2px; }
+  .c-title--xl{ font-size: clamp(18px, 2.2vw, 26px); }
+}
+
+:root{
+  --safe-top: env(safe-area-inset-top);
+  --topbar-h: clamp(56px, 6.5vw, 76px);
+  --topbar-pad: 12px;
+}
+.topbar{
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: calc(var(--topbar-h) + var(--safe-top));
+  padding: calc(var(--safe-top) + var(--topbar-pad)) 16px var(--topbar-pad);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  background: linear-gradient(to bottom, rgba(10,11,14,.9), rgba(10,11,14,.65));
+  backdrop-filter: saturate(140%) blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.page{ padding-top: calc(var(--topbar-h) + var(--safe-top)); }
+.logo-img{ height: clamp(24px, 5.2vw, 60px); width: auto; display: block; }
+.nav-center-box ul{ display:flex; gap:16px; align-items:center; justify-content:center; }
+.profile-btn{ justify-self:end; display:flex; align-items:center; gap:8px; }
