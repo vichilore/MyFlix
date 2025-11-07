@@ -35,22 +35,100 @@ const API = (() => {
     return data;
   }
 
+  function normalizeProfile(payload) {
+    if (!payload) return null;
+
+    if (Array.isArray(payload)) {
+      return payload.length ? normalizeProfile(payload[0]) : null;
+    }
+
+    if (payload.profile && payload.profile !== payload) {
+      return normalizeProfile(payload.profile);
+    }
+
+    if (payload.user && payload.user !== payload) {
+      return normalizeProfile(payload.user);
+    }
+
+    if (payload.current_profile && payload.current_profile !== payload) {
+      return normalizeProfile(payload.current_profile);
+    }
+
+    if (payload.currentProfile && payload.currentProfile !== payload) {
+      return normalizeProfile(payload.currentProfile);
+    }
+
+    if (payload.data && payload.data !== payload) {
+      return normalizeProfile(payload.data);
+    }
+
+    if (Array.isArray(payload.profiles)) {
+      const first = payload.profiles[0];
+      return first ? normalizeProfile(first) : null;
+    }
+
+    const id = payload.id ?? payload.profile_id ?? payload.user_id ?? null;
+    const displayName = payload.displayName
+      ?? payload.display_name
+      ?? payload.username
+      ?? payload.name
+      ?? null;
+    const avatarUrl = payload.avatarUrl
+      ?? payload.avatar_url
+      ?? payload.avatar
+      ?? payload.image_url
+      ?? null;
+    const publicActivity = payload.publicActivity ?? payload.public_activity;
+
+    const normalized = { id, displayName, avatarUrl };
+    if (publicActivity !== undefined) {
+      normalized.publicActivity = publicActivity;
+    }
+    return normalized;
+  }
+
+  function normalizeProfileList(payload) {
+    if (!payload) return [];
+
+    if (Array.isArray(payload)) {
+      return payload.map(normalizeProfile).filter(Boolean);
+    }
+
+    const candidates = [
+      payload.profiles,
+      payload.data && payload.data.profiles
+    ];
+
+    for (const list of candidates) {
+      if (Array.isArray(list)) {
+        return list.map(normalizeProfile).filter(Boolean);
+      }
+    }
+
+    const single = normalizeProfile(payload);
+    return single ? [single] : [];
+  }
+
   // --- PROFILE ---
   async function getCurrentProfile() {
     try {
-      return await authedRequest("GET", "/profiles/me");
+      const data = await authedRequest("GET", "/profiles/me");
+      return normalizeProfile(data);
     } catch(e) {
       // fallback a /me per backend che non espone /profiles/me
-      return await authedRequest("GET", "/me");
+      const data = await authedRequest("GET", "/me");
+      return normalizeProfile(data);
     }
   }
 
   async function listMyProfiles() {
     try {
-      return await authedRequest("GET", "/profiles?owner=me");
+      const data = await authedRequest("GET", "/profiles?owner=me");
+      return normalizeProfileList(data);
     } catch(e) {
       try {
-        return await authedRequest("GET", "/profiles");
+        const data = await authedRequest("GET", "/profiles");
+        return normalizeProfileList(data);
       } catch {
         // se non supportato, ritorna profilo corrente come unica voce
         const me = await getCurrentProfile();
