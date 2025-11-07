@@ -104,6 +104,34 @@
     </div>
   </div>
 
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="auth-modal-backdrop" style="display:none;">
+    <div class="auth-modal-card">
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" data-tab="login" type="button">Login</button>
+        <button class="auth-tab-btn" data-tab="signup" type="button">Signup</button>
+      </div>
+      <div class="auth-panel" data-panel="login" style="display:block;">
+        <label for="login_username">Username</label>
+        <input id="login_username" type="text" autocomplete="username" />
+        <label for="login_pin">PIN</label>
+        <input id="login_pin" type="password" inputmode="numeric" autocomplete="current-password" />
+        <button id="login_btn" class="auth-primary-btn" type="button">Accedi</button>
+        <div id="login_error" class="auth-error"></div>
+      </div>
+      <div class="auth-panel" data-panel="signup" style="display:none;">
+        <label for="signup_username">Username</label>
+        <input id="signup_username" type="text" autocomplete="username" />
+        <label for="signup_pin">PIN</label>
+        <input id="signup_pin" type="password" inputmode="numeric" autocomplete="new-password" />
+        <label for="signup_avatar">Avatar URL (opzionale)</label>
+        <input id="signup_avatar" type="url" />
+        <button id="signup_btn" class="auth-primary-btn" type="button">Crea account</button>
+        <div id="signup_error" class="auth-error"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- SEARCH FAB -->
   <button id="searchFab" class="search-ico" type="button" aria-label="Apri ricerca">
     <svg viewBox="0 0 250 250" width="100%" height="100%">

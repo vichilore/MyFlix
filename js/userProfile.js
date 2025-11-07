@@ -21,7 +21,15 @@ const UserProfile = (() => {
       if (nameEl) nameEl.textContent = 'Profilo';
     }
 
-    btn.addEventListener('click', () => toggleMenu());
+    btn.addEventListener('click', () => {
+      if (!Auth.isLoggedIn()) {
+        if (typeof AuthModal !== 'undefined' && AuthModal.show) {
+          AuthModal.show();
+        }
+        return;
+      }
+      toggleMenu();
+    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && menuOpen) closeMenu();
     });
@@ -44,6 +52,9 @@ const UserProfile = (() => {
         }
       } catch (e) {
         console.warn('Profile switch failed', e);
+        if (/Not authenticated/i.test(e?.message || '')) {
+          if (typeof AuthModal !== 'undefined' && AuthModal.show) AuthModal.show();
+        }
       }
     });
 

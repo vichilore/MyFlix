@@ -10,8 +10,34 @@ const { Pool } = pkg;
 // pool Postgres
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: {
+    // Supabase/managed PG usually requires SSL
+    rejectUnauthorized: false,
+  },
+  keepAlive: true,
+  max: Number(process.env.DB_POOL_MAX || 5),
+  idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT || 10_000),
+  connectionTimeoutMillis: Number(process.env.DB_CONN_TIMEOUT || 5_000)
 });
+
+// Optional: quick visibility into DB reachability on boot
+pool.query('select 1 as ok').then(() => {
+  console.log('[db] connection test OK');
+}).catch((err) => {
+  console.error('[db] connection test FAILED:', err?.code || err?.name || 'error', err?.message || String(err));
+});
+
+function isTransientDbError(err) {
+  if (!err) return false;
+  const code = err.code || err.name || '';
+  const msg = (err.message || '').toLowerCase();
+  // network layer
+  if (code === 'ETIMEDOUT' || code === 'ECONNRESET' || code === 'ENOTFOUND' || code === 'ECONNREFUSED') return true;
+  if (msg.includes('timeout') || msg.includes('timed out') || msg.includes('connect') && msg.includes('timeout')) return true;
+  // postgres sqlstate
+  const pgCodes = new Set(['57P01' /* admin_shutdown */, '53300' /* too_many_connections */]);
+  return pgCodes.has(code);
+}
 
 // EXPRESS APP
 const app = express();
@@ -65,6 +91,17 @@ app.get("/__debug", (req, res) => {
   });
 });
 
+// DB health endpoint (helps diagnosing Render/Supabase connectivity)
+app.get("/__db", async (req, res) => {
+  try {
+    const r = await pool.query('select now() as now');
+    res.json({ ok: true, now: r.rows[0].now });
+  } catch (err) {
+    const transient = isTransientDbError(err);
+    res.status(transient ? 503 : 500).json({ ok: false, code: err.code || err.name, message: err.message });
+  }
+});
+
 // -------------- UTIL & MIDDLEWARE AUTH --------------
 function signToken(user) {
   return jwt.sign(
@@ -103,6 +140,9 @@ async function authRequired(req, res, next) {
     next();
   } catch (err) {
     console.error("authRequired error:", err);
+    if (isTransientDbError(err)) {
+      return res.status(503).json({ error: "db_unavailable", details: err.code || err.name || 'ETIMEDOUT' });
+    }
     return res.status(401).json({ error: "invalid token" });
   }
 }

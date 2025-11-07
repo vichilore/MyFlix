@@ -51,77 +51,32 @@ class WatchPage {
     picker.innerHTML = '';
 
     if (SeriesHelper.isSeasonal(series)) {
-      // Create Netflix-style season picker
-      picker.innerHTML = `
-        <button class="season-nav" id="seasonPrev" aria-label="Stagione precedente">‹</button>
-        <div class="season-container">
-          <div class="season-pills" id="seasonPills"></div>
-        </div>
-        <button class="season-nav" id="seasonNext" aria-label="Prossima stagione">›</button>
-        <div class="season-info" id="seasonInfo"></div>
-      `;
+      const bar = document.createElement('div');
+      bar.className = 'iptv-season-bar';
+      picker.appendChild(bar);
 
-      const pillsContainer = $('#seasonPills');
-      const prevBtn = $('#seasonPrev');
-      const nextBtn = $('#seasonNext');
-      const seasonInfo = $('#seasonInfo');
-
-      // Create season pills
       series.seasons.forEach((s, idx) => {
-        const pill = document.createElement('button');
-        pill.className = 'season-pill' + (idx === this.currentSeasonIndex ? ' active' : '');
-        pill.textContent = s.title || `Stagione ${idx + 1}`;
-        pill.setAttribute('aria-label', `Seleziona ${s.title || `stagione ${idx + 1}`}`);
-        pill.onclick = () => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'iptv-season-btn' + (idx === this.currentSeasonIndex ? ' active' : '');
+        const label = (s.title && s.title.trim()) ? s.title : `Stagione ${idx + 1}`;
+        btn.textContent = label;
+        btn.addEventListener('click', () => {
+          if (this.currentSeasonIndex === idx) return;
           this.currentSeasonIndex = idx;
           this.renderSeasons(series);
-        };
-        pillsContainer.appendChild(pill);
+        });
+        bar.appendChild(btn);
       });
-
-      // Add navigation functionality
-      prevBtn.onclick = () => {
-        if (this.currentSeasonIndex > 0) {
-          this.currentSeasonIndex--;
-          this.renderSeasons(series);
-        }
-      };
-
-      nextBtn.onclick = () => {
-        if (this.currentSeasonIndex < series.seasons.length - 1) {
-          this.currentSeasonIndex++;
-          this.renderSeasons(series);
-        }
-      };
-
-      // Update navigation buttons state
-      prevBtn.disabled = this.currentSeasonIndex === 0;
-      nextBtn.disabled = this.currentSeasonIndex === series.seasons.length - 1;
-
-      // Update season info
-      const currentSeason = series.seasons[this.currentSeasonIndex];
-      seasonInfo.textContent = `${currentSeason.episodes || 0} episodi`;
-
-      // Add keyboard navigation
-      picker.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
-          prevBtn.click();
-        } else if (e.key === 'ArrowRight' && !nextBtn.disabled) {
-          nextBtn.click();
-        }
-      });
-
-      // Make season picker focusable for keyboard navigation
-      picker.setAttribute('tabindex', '0');
     } else {
-      // Flat series structure
-      picker.innerHTML = `
-        <div class="season-container">
-          <div class="season-pills">
-            <button class="season-pill active">Tutti gli episodi</button>
-          </div>
-        </div>
-      `;
+      const bar = document.createElement('div');
+      bar.className = 'iptv-season-bar';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'iptv-season-btn active';
+      btn.textContent = 'Tutti gli episodi';
+      bar.appendChild(btn);
+      picker.appendChild(bar);
     }
 
     this.updateHeader(series);

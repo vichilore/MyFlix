@@ -1730,3 +1730,19 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .logo-img{ height: clamp(24px, 5.2vw, 60px); width: auto; display: block; }
 .nav-center-box ul{ display:flex; gap:16px; align-items:center; justify-content:center; }
 .profile-btn{ justify-self:end; display:flex; align-items:center; gap:8px; }
+
+/* ===== Watch Season Picker → align to IPTV style ===== */
+.season-picker{
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 10px 0 6px !important;
+  backdrop-filter: none !important;
+  overflow: visible !important;
+}
+.season-picker .season-container,
+.season-picker .season-nav,
+.season-picker .season-info,
+.season-picker .season-pills,
+.season-picker .season-pill{ display:none !important; }
+.season-picker .iptv-season-bar{ display:flex; flex-wrap:wrap; gap:.55rem; }

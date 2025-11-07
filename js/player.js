@@ -79,6 +79,50 @@ class Player {
       this.seasonNextBtn = seasonNextBtn;
     }
 
+    // iOS/iPad playback attributes and custom controls
+    try {
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      video.setAttribute('x-webkit-airplay', 'allow');
+      video.setAttribute('controlslist', 'nodownload');
+      video.disableRemotePlayback = false;
+    } catch {}
+
+    try {
+      const controlsHost = document.querySelector('.player-controls');
+      if (controlsHost) {
+        // Picture-in-Picture
+        const pipBtn = document.createElement('button');
+        pipBtn.className = 'btn';
+        pipBtn.id = 'togglePiP';
+        pipBtn.title = 'Picture in Picture';
+        pipBtn.textContent = 'PiP';
+        pipBtn.style.display = 'none';
+        pipBtn.addEventListener('click', () => Player.togglePiP());
+
+        // Fullscreen
+        const fsBtn = document.createElement('button');
+        fsBtn.className = 'btn';
+        fsBtn.id = 'toggleFullscreen';
+        fsBtn.title = 'Schermo intero';
+        fsBtn.textContent = 'Fullscreen';
+        fsBtn.addEventListener('click', () => Player.toggleFullscreen());
+
+        controlsHost.insertBefore(fsBtn, controlsHost.firstChild);
+        controlsHost.insertBefore(pipBtn, controlsHost.firstChild);
+
+        const pipSupported = 'pictureInPictureEnabled' in document && typeof video.requestPictureInPicture === 'function';
+        if (pipSupported) pipBtn.style.display = '';
+
+        ['fullscreenchange', 'webkitfullscreenchange', 'MSFullscreenChange'].forEach(evt =>
+          document.addEventListener(evt, () => {
+            const el = document.getElementById('toggleFullscreen');
+            if (el) el.textContent = Player.isFullscreen() ? 'Esci Fullscreen' : 'Fullscreen';
+          })
+        );
+      }
+    } catch {}
+
     // salvataggio avanzamento
     video.addEventListener('timeupdate', () => this.handleTimeUpdate());
     video.addEventListener('ended',      () => this.handleEnded());
@@ -126,13 +170,13 @@ class Player {
         }
       } else {
         // tap singolo -> toggle controlli nativi per 2.5s
-        if (!this.video) return;
-        if (this.video.hasAttribute('controls')) {
-          this.video.removeAttribute('controls');
-        } else {
-          this.video.setAttribute('controls', '');
-          setTimeout(() => { try { this.video.removeAttribute('controls'); } catch {} }, 2500);
-        }
+        // if (!this.video) return;
+        // if (this.video.hasAttribute('controls')) {
+        //   this.video.removeAttribute('controls');
+        // } else {
+        //   this.video.setAttribute('controls', '');
+        //   setTimeout(() => { try { this.video.removeAttribute('controls'); } catch {} }, 2500);
+        // }
       }
     }, { passive: true });
     // === fine aggiunta gesture ===
@@ -461,6 +505,56 @@ class Player {
       this.move(nextEp);
     } else {
       this.close();
+    }
+  }
+
+  static isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  static isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+  }
+
+  static async toggleFullscreen() {
+    const video = document.getElementById('video');
+    const container = document.getElementById('playerOverlay');
+    try {
+      if (this.isFullscreen()) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+      } else {
+        if (video && typeof video.webkitEnterFullscreen === 'function' && this.isIOS()) {
+          video.webkitEnterFullscreen();
+        } else if (container && container.requestFullscreen) {
+          await container.requestFullscreen();
+        } else if (video && video.requestFullscreen) {
+          await video.requestFullscreen();
+        } else if (video && typeof video.webkitRequestFullscreen === 'function') {
+          video.webkitRequestFullscreen();
+        }
+      }
+    } catch (e) {
+      console.warn('[Player] toggleFullscreen error', e);
+    }
+  }
+
+  static async togglePiP() {
+    try {
+      const video = document.getElementById('video');
+      if (!video) return;
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        return;
+      }
+      if ('pictureInPictureEnabled' in document && typeof video.requestPictureInPicture === 'function') {
+        if (video.paused) await video.play().catch(() => {});
+        await video.requestPictureInPicture();
+      }
+    } catch (e) {
+      console.warn('[Player] togglePiP error', e);
     }
   }
 }
