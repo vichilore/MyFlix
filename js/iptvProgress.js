@@ -76,13 +76,15 @@
 
   const IPTVProgress = {
     // -------- FILM --------
-    saveMovieProgress(movie) {
+    saveMovieProgress(movie, seconds = 0, duration = 0) {
       const info = pickMovieInfo(movie);
       if (!info) return;
 
       const data = loadRaw();
       data.movies[info.id] = {
         ...info,
+        seconds: Math.max(0, Number(seconds) || 0),
+        duration: Math.max(0, Number(duration) || 0),
         updatedAt: nowTs()
       };
       saveRaw(data);
@@ -92,7 +94,7 @@
     // show = oggetto TMDb della serie
     // seasonNumber = numero stagione (1,2,...)
     // episodeNumber = numero episodio (1,2,...)
-    saveEpisodeProgress(show, seasonNumber, episodeNumber) {
+    saveEpisodeProgress(show, seasonNumber, episodeNumber, seconds = 0, duration = 0) {
       const info = pickShowInfo(show);
       if (!info) return;
 
@@ -101,6 +103,8 @@
         ...info,
         season: seasonNumber || 1,
         episode: episodeNumber || 1,
+        seconds: Math.max(0, Number(seconds) || 0),
+        duration: Math.max(0, Number(duration) || 0),
         updatedAt: nowTs()
       };
       saveRaw(data);
@@ -130,3 +134,5 @@
 
   window.IPTVProgress = IPTVProgress;
 })();
+
+

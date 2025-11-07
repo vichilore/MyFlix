@@ -126,6 +126,9 @@ class Player {
     // salvataggio avanzamento
     video.addEventListener('timeupdate', () => this.handleTimeUpdate());
     video.addEventListener('ended',      () => this.handleEnded());
+    video.addEventListener('pause',      () => this.persistProgress());
+    video.addEventListener('play',       () => this.persistProgress());
+    video.addEventListener('seeked',     () => this.persistProgress());
 
     // sync con WatchTogether se presente
     video.addEventListener('play',   () => { if (window.WatchTogether) WatchTogether.broadcastState?.(); });
@@ -337,7 +340,7 @@ class Player {
     const d = video.duration;
 
     // salva max ogni ~2s
-    if ((Date.now() - this.lastSave) < 2000) return;
+    if ((Date.now() - this.lastSave) < 5000) return;
     this.lastSave = Date.now();
 
     if (d > 0) {
@@ -566,3 +569,4 @@ window.Player = Player;
 
 // inizializza i listener del player
 Player.init?.();
+

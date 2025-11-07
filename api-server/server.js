@@ -137,37 +137,65 @@ app.get("/__db", async (req, res) => {
 });
 
 // Save IPTV player events and update last known position
+// Save IPTV player events and update last known position
 app.post("/iptv/event", authRequired, async (req, res) => {
   try {
-    const { event, currentTime, duration, video_id } = req.body?.data || req.body || {};
-    if (!event || typeof currentTime !== 'number' || typeof duration !== 'number' || !video_id) {
-      return res.status(400).json({ error: 'invalid payload' });
+    // payload: { type:'PLAYER_EVENT', data:{ event, currentTime, duration, video_id } }
+    const body = req.body || {};
+    const data = body.data || body; // accetto anche payload "flat"
+    const { event, currentTime, duration, video_id } = data || {};
+
+    if (!event || typeof currentTime !== "number" || typeof duration !== "number" || !video_id) {
+      return res.status(400).json({ error: "invalid payload", received: data });
     }
+
     const provider_video_id = String(video_id);
     const t = Math.max(0, Number(currentTime) || 0);
     const d = Math.max(0, Number(duration) || 0);
+    const userId = req.user.id;
 
+    // 1) Log grezzo dell'evento (storico)
     await pool.query(
-      `INSERT INTO iptv_watch_events(user_id, provider_video_id, event, t, d)
-       VALUES ($1,$2,$3,$4,$5)`,
-      [req.user.id, provider_video_id, String(event), t, d]
+      `INSERT INTO iptv_watch_events (user_id, provider_video_id, event, t, d)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [userId, provider_video_id, String(event), t, d]
     );
 
-    await pool.query(
-      `INSERT INTO iptv_positions(user_id, provider_video_id, t, d, last_event, updated_at)
-       VALUES ($1,$2,$3,$4,$5, NOW())
-       ON CONFLICT (user_id, provider_video_id)
-       DO UPDATE SET t = EXCLUDED.t, d = EXCLUDED.d, last_event = EXCLUDED.last_event, updated_at = NOW()`,
-      [req.user.id, provider_video_id, t, d, String(event)]
+    // 2) Aggiornamento posizione "ultima nota" SENZA ON CONFLICT
+    const updateRes = await pool.query(
+      `UPDATE iptv_positions
+         SET t = $3,
+             d = $4,
+             last_event = $5,
+             updated_at = NOW()
+       WHERE user_id = $1
+         AND provider_video_id = $2`,
+      [userId, provider_video_id, t, d, String(event)]
     );
+
+    if (updateRes.rowCount === 0) {
+      // nessuna riga esistente → inserisco
+      await pool.query(
+        `INSERT INTO iptv_positions (user_id, provider_video_id, t, d, last_event, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [userId, provider_video_id, t, d, String(event)]
+      );
+    }
 
     res.json({ ok: true });
   } catch (err) {
     const transient = isTransientDbError(err);
-    console.error('iptv/event error', err);
-    res.status(transient ? 503 : 500).json({ error: 'server error' });
+    console.error("iptv/event error", err);
+    // 🔴 mando i dettagli così li vediamo dal frontend
+    res.status(transient ? 503 : 500).json({
+      error: "server error",
+      code: err.code || err.name,
+      message: err.message,
+      detail: err.detail || null,
+    });
   }
 });
+
 
 // Get last known position for a given provider video id
 app.get("/iptv/position", authRequired, async (req, res) => {

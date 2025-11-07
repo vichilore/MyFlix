@@ -5,71 +5,90 @@
 // - #/serie/:id    => pagina player serie
 
 (function () {
-  let iptvRoot = null
-  let catalogCache = null // { movies: [...], series: [...] }
+  let iptvRoot = null;
+  let catalogCache = null; // { movies: [...], series: [...] }
+
+  const VIX_PRIMARY_COLOR = 'B20710';
+  const VIX_SECONDARY_COLOR = '170000';
+  const VIX_LANG = 'it';
 
   function ensureRoot() {
     if (!iptvRoot) {
-      iptvRoot = document.createElement('section')
-      iptvRoot.id = 'iptv-root'
-      iptvRoot.className = 'iptv-page'
+      iptvRoot = document.createElement('section');
+      iptvRoot.id = 'iptv-root';
+      iptvRoot.className = 'iptv-page';
     }
-    return iptvRoot
+    return iptvRoot;
   }
 
   async function getCatalog() {
-    if (catalogCache) return catalogCache
+    if (catalogCache) return catalogCache;
     if (!window.IPTV || !window.IPTV.getItalianCatalog) {
-      throw new Error('window.IPTV.getItalianCatalog non disponibile')
+      throw new Error('window.IPTV.getItalianCatalog non disponibile');
     }
-    catalogCache = await window.IPTV.getItalianCatalog()
-    return catalogCache
+    catalogCache = await window.IPTV.getItalianCatalog();
+    return catalogCache;
+  }
+
+  // Restituisce l'URL base tipo "https://vixsrc.to/movie/786892/"
+  function getVixMovieBaseUrl(item) {
+    const raw = item?.url || '';
+    if (!raw) return '';
+
+    try {
+      const u = new URL(raw);
+      const path = u.pathname.endsWith('/') ? u.pathname : u.pathname + '/';
+      return u.origin + path; // es: https://vixsrc.to/movie/786892/
+    } catch {
+      const noQuery = raw.split('?')[0];
+      return noQuery.endsWith('/') ? noQuery : noQuery + '/';
+    }
   }
 
   function setActiveNav(id) {
     try {
       document
         .querySelectorAll('.nav-center-box li')
-        .forEach(li => li.classList.remove('active'))
+        .forEach(li => li.classList.remove('active'));
 
       if (id) {
-        const el = document.getElementById(id)
-        if (el && el.parentElement) el.parentElement.classList.add('active')
+        const el = document.getElementById(id);
+        if (el && el.parentElement) el.parentElement.classList.add('active');
       }
     } catch {}
   }
 
   function forceShowNav() {
-    const nav = document.querySelector('.nav-center-box')
-    if (!nav) return
-    let el = nav
+    const nav = document.querySelector('.nav-center-box');
+    if (!nav) return;
+    let el = nav;
     while (el) {
       if (el.style) {
-        el.style.display = ''
-        el.style.visibility = ''
+        el.style.display = '';
+        el.style.visibility = '';
       }
-      el = el.parentElement
+      el = el.parentElement;
     }
   }
 
   // Mostra solo la pagina IPTV come overlay, lasciando intatta la home
   function showIptvPage() {
-    const root = ensureRoot()
+    const root = ensureRoot();
 
     if (root.parentElement !== document.body) {
-      document.body.appendChild(root)
+      document.body.appendChild(root);
     }
 
-    root.style.display = 'block'
-    forceShowNav()
+    root.style.display = 'block';
+    forceShowNav();
   }
 
   function hideIptvPage() {
     if (iptvRoot && iptvRoot.parentElement) {
-      iptvRoot.parentElement.removeChild(iptvRoot)
+      iptvRoot.parentElement.removeChild(iptvRoot);
     }
-    iptvRoot = null
-    setActiveNav(null)
+    iptvRoot = null;
+    setActiveNav(null);
   }
 
   // ---------- MAPPERS: Film / Serie → card carousel ----------
@@ -82,7 +101,7 @@
       lang: 'IT',
       year: m.year || (m.release_date ? String(m.release_date).slice(0, 4) : ''),
       rating: m.rating || m.vote_average || 0,
-    }
+    };
   }
 
   function mapSerieToCard(s) {
@@ -93,16 +112,16 @@
       lang: 'IT',
       year: s.year || (s.first_air_date ? String(s.first_air_date).slice(0, 4) : ''),
       rating: s.rating || s.vote_average || 0,
-    }
+    };
   }
 
   // ---------- LISTA FILM ----------
 
   async function renderFilmList() {
-    showIptvPage()
-    setActiveNav('nav-film')
+    showIptvPage();
+    setActiveNav('nav-film');
 
-    const root = ensureRoot()
+    const root = ensureRoot();
     root.innerHTML = `
       <div class="container iptv-container">
         <h1 class="iptv-page-title">Film Italia</h1>
@@ -118,24 +137,24 @@
 
         <div class="iptv-rows"></div>
       </div>
-    `
+    `;
 
-    const rowsHost    = root.querySelector('.iptv-rows')
-    const searchInput = root.querySelector('#iptv-film-search')
+    const rowsHost    = root.querySelector('.iptv-rows');
+    const searchInput = root.querySelector('#iptv-film-search');
 
-    const loading = document.createElement('div')
-    loading.className = 'iptv-loading'
-    loading.textContent = 'Caricamento consigliati…'
-    rowsHost.appendChild(loading)
+    const loading = document.createElement('div');
+    loading.className = 'iptv-loading';
+    loading.textContent = 'Caricamento consigliati…';
+    rowsHost.appendChild(loading);
 
-    let recommendedItems = []
+    let recommendedItems = [];
 
     function renderHome() {
-      rowsHost.innerHTML = ''
+      rowsHost.innerHTML = '';
 
       if (!recommendedItems.length) {
-        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`
-        return
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
+        return;
       }
 
       const rowRec = window.Carousel.create({
@@ -145,18 +164,18 @@
         size: 'xl',
         showProgress: false,
         onClick: (item) => {
-          location.hash = `#/film/${item.id}`
+          location.hash = `#/film/${item.id}`;
         }
-      })
-      rowsHost.appendChild(rowRec)
+      });
+      rowsHost.appendChild(rowRec);
     }
 
     function renderSearchResults(list) {
-      rowsHost.innerHTML = ''
+      rowsHost.innerHTML = '';
 
       if (!list.length) {
-        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film trovato per questa ricerca.</p>`
-        return
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film trovato per questa ricerca.</p>`;
+        return;
       }
 
       const rowSearch = window.Carousel.create({
@@ -166,73 +185,73 @@
         size: 'xl',
         showProgress: false,
         onClick: (item) => {
-          location.hash = `#/film/${item.id}`
+          location.hash = `#/film/${item.id}`;
         }
-      })
-      rowsHost.appendChild(rowSearch)
+      });
+      rowsHost.appendChild(rowSearch);
     }
 
     try {
       if (!window.IPTV || !window.IPTV.loadRecommendedMovies || !window.IPTV.searchMovies) {
-        throw new Error('Funzioni IPTV recommended/search non disponibili')
+        throw new Error('Funzioni IPTV recommended/search non disponibili');
       }
 
       // 1) Film consigliati
-      const recommended = await window.IPTV.loadRecommendedMovies(2)
-      rowsHost.innerHTML = ''
+      const recommended = await window.IPTV.loadRecommendedMovies(2);
+      rowsHost.innerHTML = '';
 
-      recommendedItems = (recommended || []).map(mapMovieToCard)
+      recommendedItems = (recommended || []).map(mapMovieToCard);
 
       // 2) Prima render: solo "Consigliati per te"
-      renderHome()
+      renderHome();
 
       // 3) Search
-      let lastSearchId = 0
+      let lastSearchId = 0;
 
       if (searchInput) {
         searchInput.addEventListener('input', () => {
-          const q = searchInput.value.trim()
-          lastSearchId++
-          const searchId = lastSearchId
+          const q = searchInput.value.trim();
+          lastSearchId++;
+          const searchId = lastSearchId;
 
           if (!q) {
-            renderHome()
-            return
+            renderHome();
+            return;
           }
 
           rowsHost.innerHTML = `
             <div class="iptv-loading">Ricerca in corso…</div>
-          `
+          `;
 
           window.IPTV.searchMovies(q, 1)
             .then(movies => {
-              if (searchId !== lastSearchId) return
-              const results = (movies || []).map(mapMovieToCard)
-              renderSearchResults(results)
+              if (searchId !== lastSearchId) return;
+              const results = (movies || []).map(mapMovieToCard);
+              renderSearchResults(results);
             })
             .catch(err => {
-              console.error('[IPTV] errore search TMDB', err)
-              if (searchId !== lastSearchId) return
+              console.error('[IPTV] errore search TMDB', err);
+              if (searchId !== lastSearchId) return;
 
               rowsHost.innerHTML = `
                 <p class="iptv-empty">Errore durante la ricerca.</p>
-              `
-            })
-        })
+              `;
+            });
+        });
       }
     } catch (e) {
-      console.error('[IPTV] errore lista Film', e)
-      rowsHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento dei Film.</p>`
+      console.error('[IPTV] errore lista Film', e);
+      rowsHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento dei Film.</p>`;
     }
   }
 
   // ---------- LISTA SERIE ----------
 
   async function renderSerieList() {
-    showIptvPage()
-    setActiveNav('nav-serie')
+    showIptvPage();
+    setActiveNav('nav-serie');
 
-    const root = ensureRoot()
+    const root = ensureRoot();
     root.innerHTML = `
       <div class="container iptv-container">
         <h1 class="iptv-page-title">Serie TV Italia</h1>
@@ -248,24 +267,24 @@
 
         <div class="iptv-rows"></div>
       </div>
-    `
+    `;
 
-    const rowsHost    = root.querySelector('.iptv-rows')
-    const searchInput = root.querySelector('#iptv-serie-search')
+    const rowsHost    = root.querySelector('.iptv-rows');
+    const searchInput = root.querySelector('#iptv-serie-search');
 
-    const loading = document.createElement('div')
-    loading.className = 'iptv-loading'
-    loading.textContent = 'Caricamento serie consigliate…'
-    rowsHost.appendChild(loading)
+    const loading = document.createElement('div');
+    loading.className = 'iptv-loading';
+    loading.textContent = 'Caricamento serie consigliate…';
+    rowsHost.appendChild(loading);
 
-    let recommendedItems = []
+    let recommendedItems = [];
 
     function renderHome() {
-      rowsHost.innerHTML = ''
+      rowsHost.innerHTML = '';
 
       if (!recommendedItems.length) {
-        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`
-        return
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
+        return;
       }
 
       const rowRec = window.Carousel.create({
@@ -275,18 +294,18 @@
         size: 'xl',
         showProgress: false,
         onClick: (item) => {
-          location.hash = `#/serie/${item.id}`
+          location.hash = `#/serie/${item.id}`;
         }
-      })
-      rowsHost.appendChild(rowRec)
+      });
+      rowsHost.appendChild(rowRec);
     }
 
     function renderSearchResults(list) {
-      rowsHost.innerHTML = ''
+      rowsHost.innerHTML = '';
 
       if (!list.length) {
-        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie trovata per questa ricerca.</p>`
-        return
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie trovata per questa ricerca.</p>`;
+        return;
       }
 
       const rowSearch = window.Carousel.create({
@@ -296,88 +315,130 @@
         size: 'xl',
         showProgress: false,
         onClick: (item) => {
-          location.hash = `#/serie/${item.id}`
+          location.hash = `#/serie/${item.id}`;
         }
-      })
-      rowsHost.appendChild(rowSearch)
+      });
+      rowsHost.appendChild(rowSearch);
     }
 
     try {
       if (!window.IPTV ||
           !window.IPTV.loadRecommendedSeries ||
           !window.IPTV.searchSeries) {
-        throw new Error('Funzioni IPTV serie recommended/search non disponibili')
+        throw new Error('Funzioni IPTV serie recommended/search non disponibili');
       }
 
       // 1) Serie consigliate
-      const recommended = await window.IPTV.loadRecommendedSeries(2)
-      rowsHost.innerHTML = ''
+      const recommended = await window.IPTV.loadRecommendedSeries(2);
+      rowsHost.innerHTML = '';
 
-      recommendedItems = (recommended || []).map(mapSerieToCard)
+      recommendedItems = (recommended || []).map(mapSerieToCard);
 
       // 2) Prima render
-      renderHome()
+      renderHome();
 
       // 3) Search
-      let lastSearchId = 0
+      let lastSearchId = 0;
 
       if (searchInput) {
         searchInput.addEventListener('input', () => {
-          const q = searchInput.value.trim()
-          lastSearchId++
-          const searchId = lastSearchId
+          const q = searchInput.value.trim();
+          lastSearchId++;
+          const searchId = lastSearchId;
 
           if (!q) {
-            renderHome()
-            return
+            renderHome();
+            return;
           }
 
           rowsHost.innerHTML = `
             <div class="iptv-loading">Ricerca serie in corso…</div>
-          `
+          `;
 
           window.IPTV.searchSeries(q, 1)
             .then(series => {
-              if (searchId !== lastSearchId) return
-              const results = (series || []).map(mapSerieToCard)
-              renderSearchResults(results)
+              if (searchId !== lastSearchId) return;
+              const results = (series || []).map(mapSerieToCard);
+              renderSearchResults(results);
             })
             .catch(err => {
-              console.error('[IPTV] errore search serie TMDB', err)
-              if (searchId !== lastSearchId) return
+              console.error('[IPTV] errore search serie TMDB', err);
+              if (searchId !== lastSearchId) return;
 
               rowsHost.innerHTML = `
                 <p class="iptv-empty">Errore durante la ricerca.</p>
-              `
-            })
-        })
+              `;
+            });
+        });
       }
     } catch (e) {
-      console.error('[IPTV] errore lista Serie', e)
-      rowsHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento delle Serie TV.</p>`
+      console.error('[IPTV] errore lista Serie', e);
+      rowsHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento delle Serie TV.</p>`;
     }
   }
 
   // ---------- PLAYER PAGE (hero + iframe) ----------
 
-  function renderPlayerPage({ type, item }) {
-    showIptvPage()
-    setActiveNav(type === 'film' ? 'nav-film' : 'nav-serie')
+  async function renderPlayerPage({ type, item }) {
+    showIptvPage();
+    setActiveNav(type === 'film' ? 'nav-film' : 'nav-serie');
 
-    const root = ensureRoot()
+    const root = ensureRoot();
 
-    const title   = item.title || item.name || 'Senza titolo'
-    const year    = item.year || (item.release_date ? String(item.release_date).slice(0, 4) : '')
-    const rating  = item.rating || item.vote_average
-    const runtime = item.runtime || item.duration
-    const genres  = item.genres || item.genre_names || []
+    const title   = item.title || item.name || 'Senza titolo';
+    const year    = item.year || (item.release_date ? String(item.release_date).slice(0, 4) : '');
+    const rating  = item.rating || item.vote_average;
+    const runtime = item.runtime || item.duration;
+    const genres  = item.genres || item.genre_names || [];
 
-    const backdrop = item.backdrop || item.backdrop_path || item.poster || ''
-    const poster   = item.poster || item.poster_path || backdrop
+    const backdrop = item.backdrop || item.backdrop_path || item.poster || '';
+    const poster   = item.poster || item.poster_path || backdrop;
 
     const bgStyle = backdrop
       ? `style="background-image: url('${backdrop}');"`
-      : ''
+      : '';
+
+    // IPTV film resume (precompute initialSrc and seconds)
+    let resumeSeconds = 0;
+    let initialSrc = item.url || '';
+
+    if (type === 'film') {
+      const base = getVixMovieBaseUrl(item); // es: https://vixsrc.to/movie/786892/
+
+      // URL base: parte da 0
+      if (base) {
+        initialSrc = `${base}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+      }
+
+      if (window.Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
+        try {
+          const pos = await API.getIptvPosition(String(item.id));
+          console.log('[IPTV] /iptv/position result', pos);
+
+          const seconds = Number(pos?.position?.t ?? 0) || 0;
+          resumeSeconds = seconds;
+
+          // Se ha guardato almeno 5s, partiamo da lì
+          if (seconds > 5 && base) {
+            initialSrc = `${base}?startAt=${Math.floor(seconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+          }
+        } catch (err) {
+          console.warn('[IPTV] getIptvPosition error', err);
+        }
+      }
+    }
+
+    if (!initialSrc) {
+      initialSrc = item.url || '';
+    }
+
+    console.log('[IPTV] iframe initial src', { initialSrc, resumeSeconds });
+
+    try {
+      if ((window.IPTV_DEBUG ?? true)) {
+        console.log('[IPTV] render resume info', { type, id: item?.id, resumeSeconds, initialSrc });
+      }
+    } catch {}
 
     root.innerHTML = `
       <div class="iptv-player-page">
@@ -418,9 +479,6 @@
                 }
 
                 <div class="iptv-hero-actions">
-                  <button class="iptv-btn iptv-btn--primary iptv-btn-play">
-                    ▶ Riproduci
-                  </button>
                   <button class="iptv-btn iptv-btn--ghost">
                     ＋ La mia lista
                   </button>
@@ -436,7 +494,7 @@
             </div>
             <div class="iptv-player-frame-inner">
               <iframe
-                src="${item.url || ''}"
+                src="${initialSrc}"
                 class="iptv-player-frame"
                 allowfullscreen
               ></iframe>
@@ -444,104 +502,244 @@
           </section>
         </div>
       </div>
-    `
+    `;
 
-    const playBtn = root.querySelector('.iptv-btn-play')
-    const iframe  = root.querySelector('.iptv-player-frame')
-    if (playBtn && iframe) {
-      playBtn.addEventListener('click', () => {
-        iframe.focus()
-      })
+    const playBtn = root.querySelector('.iptv-btn-play');
+    const iframe  = root.querySelector('.iptv-player-frame');
+
+    if (type === 'film' && resumeSeconds > 5) {
+      const actions = root.querySelector('.iptv-hero-actions');
+      if (actions && iframe) {
+        const btn = document.createElement('button');
+        btn.className = 'iptv-btn iptv-btn--primary iptv-btn-resume';
+        const mm = Math.floor(resumeSeconds / 60);
+        const ss = String(Math.floor(resumeSeconds % 60)).padStart(2, '0');
+        btn.textContent = 'Riprendi da ' + mm + ':' + ss;
+
+        btn.addEventListener('click', () => {
+          try {
+            const base = getVixMovieBaseUrl(item) || (item.url || iframe.src);
+            const seconds = Math.floor(resumeSeconds);
+            const nextSrc = `${base}?startAt=${seconds}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+
+            console.log('[IPTV] resume click -> src', nextSrc);
+            iframe.src = nextSrc;
+            iframe.focus();
+          } catch (err) {
+            console.warn('[IPTV] resume click error', err);
+          }
+        });
+
+        actions.insertBefore(btn, actions.firstChild);
+        console.log('[IPTV] resume button injected', { resumeSeconds });
+      }
     }
 
-    // Bridge player events from vixsrc iframe to backend
+    if (playBtn && iframe) {
+      playBtn.addEventListener('click', () => {
+        iframe.focus();
+      });
+    }
+
+    // 🔵 PANNELLO DEBUG EVENTI
+    const playerSection = root.querySelector('.iptv-player-section');
+    if (playerSection) {
+      const debug = document.createElement('section');
+      debug.className = 'iptv-debug-events';
+      debug.innerHTML = `
+        <div class="iptv-debug-events__head">
+          <h3 style="font-size:14px;margin:0 0 4px;">Debug Player Events</h3>
+          <p style="font-size:12px;margin:0 0 8px;opacity:.8;">
+            Clicca i bottoni per inviare eventi finti oppure guarda i log di quelli reali.
+          </p>
+        </div>
+        <div class="iptv-debug-events__buttons" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+          <button type="button" class="iptv-debug-btn" data-ev="play">Test PLAY</button>
+          <button type="button" class="iptv-debug-btn" data-ev="pause">Test PAUSE</button>
+          <button type="button" class="iptv-debug-btn" data-ev="seeked">Test SEEKED</button>
+          <button type="button" class="iptv-debug-btn" data-ev="ended">Test ENDED</button>
+          <button type="button" class="iptv-debug-btn" data-ev="timeupdate">Test TIMEUPDATE</button>
+        </div>
+        <pre class="iptv-debug-events__log" style="
+          max-height:180px;
+          overflow:auto;
+          font-size:11px;
+          padding:6px;
+          background:#00000066;
+          border-radius:4px;
+          border:1px solid #ffffff22;
+          margin:0;
+          white-space:pre-wrap;
+        "></pre>
+      `;
+      playerSection.appendChild(debug);
+
+      const logEl = debug.querySelector('.iptv-debug-events__log');
+
+      function appendLog(label, payload) {
+        if (!logEl) return;
+        const time = new Date().toLocaleTimeString();
+        const line = `[${time}] ${label}: ${JSON.stringify(payload)}\n`;
+        logEl.textContent = line + logEl.textContent;
+      }
+
+      // funzione globale usata dal bridge
+      window.IPTV_DEBUG_LOG_EVENT = appendLog;
+
+      // bottoni che mandano eventi finti
+      debug.querySelectorAll('.iptv-debug-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ev = btn.getAttribute('data-ev') || 'timeupdate';
+          const fakeCurrent = Math.floor(Math.random() * 300);
+          const fakeDuration = 3600;
+          const videoId = item.id;
+
+          appendLog('FAKE SEND', {
+            event: ev,
+            currentTime: fakeCurrent,
+            duration: fakeDuration,
+            video_id: videoId
+          });
+
+          // questo passa dallo stesso onMessage del player vero
+          window.postMessage({
+            type: 'PLAYER_EVENT',
+            data: {
+              event: ev,
+              currentTime: fakeCurrent,
+              duration: fakeDuration,
+              video_id: videoId
+            }
+          }, '*');
+        });
+      });
+    }
+
     if (iframe) {
-      addIptvEventBridge(iframe, { type, item })
+      addIptvEventBridge(iframe, { type, item });
     }
   }
 
   // ---- Bridge postMessage events from vixsrc iframe ----
-  const lastSentByVideo = new Map()
-  function addIptvEventBridge(iframe, ctx) {
-    let allowedOrigin = '*'
-    try {
-      if (iframe && iframe.src) {
-        const u = new URL(iframe.src)
-        allowedOrigin = u.origin
-      }
-    } catch {}
 
-    function shouldSend(videoId, evName) {
-      const key = videoId + '|' + evName
-      const now = Date.now()
-      const last = lastSentByVideo.get(key) || 0
-      const minGap = evName === 'timeupdate' ? 3000 : 0
-      if (now - last >= minGap) {
-        lastSentByVideo.set(key, now)
-        return true
-      }
-      return false
-    }
+  const lastSentByVideo = new Map();
+
+  function shouldSend(videoId, evName) {
+    const key = videoId + '|' + evName;
+    const now = Date.now();
+    const last = lastSentByVideo.get(key) || 0;
+    // per i "timeupdate" mando max ogni 5s, gli altri eventi sempre
+    const minGap = evName === 'timeupdate' ? 5000 : 0;
+    if (now - last < minGap) return false;
+    lastSentByVideo.set(key, now);
+    return true;
+  }
+
+  function addIptvEventBridge(iframe, ctx) {
+    if (!iframe) return;
 
     function onMessage(e) {
-      if (!iframe || !e || !e.data) return
-      if (e.source !== iframe.contentWindow) return
-      if (allowedOrigin !== '*' && e.origin !== allowedOrigin) return
+      if (!iframe || !e || !e.data) return;
 
-      const msg = e.data
-      if (msg && msg.type === 'PLAYER_EVENT' && msg.data) {
-        const { event, currentTime, duration, video_id } = msg.data
-        if (typeof currentTime !== 'number' || typeof duration !== 'number') return
-        const vid = video_id != null ? String(video_id) : ''
-        if (!vid) return
+      const msg = e.data;
+      if (!msg || msg.type !== 'PLAYER_EVENT' || !msg.data) return;
 
-        // Save to backend if authenticated
+      const { event, currentTime, duration, video_id } = msg.data;
+      if (typeof currentTime !== 'number' || typeof duration !== 'number') return;
+
+      const vid = video_id != null ? String(video_id) : '';
+      if (!vid) return;
+
+      // log visuale
+      try {
+        if (typeof window.IPTV_DEBUG_LOG_EVENT === 'function') {
+          window.IPTV_DEBUG_LOG_EVENT('FROM PLAYER', {
+            event,
+            currentTime,
+            duration,
+            video_id: vid
+          });
+        }
+      } catch {}
+
+      // invio al backend solo se loggato
+      try {
         if (window.Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
           if (shouldSend(vid, String(event))) {
-            API.saveIptvEvent({ type: 'PLAYER_EVENT', data: { event, currentTime, duration, video_id: vid } })
-              .catch(() => {})
+            try {
+              if (window.IPTV_DEBUG ?? true) {
+                console.log('[IPTV] send PLAYER_EVENT', {
+                  event,
+                  t: Math.floor(currentTime),
+                  d: Math.floor(duration),
+                  video_id: vid
+                });
+              }
+            } catch {}
+
+            API.saveIptvEvent({
+              type: 'PLAYER_EVENT',
+              data: { event, currentTime, duration, video_id: vid }
+            }).catch(err => {
+              try {
+                if (window.IPTV_DEBUG ?? true) {
+                  console.warn('[IPTV] saveIptvEvent FAIL', err);
+                }
+              } catch {}
+            });
           }
         }
-      }
+      } catch {}
+
+      // cache locale per "continua a guardare"
+      try {
+        if (window.IPTVProgress && ctx && ctx.type === 'film' && ctx.item) {
+          window.IPTVProgress.saveMovieProgress(
+            ctx.item,
+            Math.floor(currentTime),
+            Math.floor(duration)
+          );
+        }
+        // per le serie qui non sappiamo stagione/episodio
+      } catch {}
     }
 
-    window.addEventListener('message', onMessage)
+    window.addEventListener('message', onMessage);
 
-    // Clean up when iptv page is hidden
-    const cleanup = () => window.removeEventListener('message', onMessage)
+    // clean-up quando la pagina IPTV viene rimossa
     try {
-      const root = ensureRoot()
+      const root = ensureRoot();
       const observer = new MutationObserver(() => {
-        if (!document.body.contains(root)) {
-          cleanup()
-          observer.disconnect()
+        if (!document.body.contains(root) || !document.body.contains(iframe)) {
+          window.removeEventListener('message', onMessage);
+          observer.disconnect();
         }
-      })
-      observer.observe(document.body, { childList: true, subtree: true })
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
     } catch {}
   }
 
   // ---------- PLAYER FILM ----------
 
   async function renderFilmPlayer(id) {
-    showIptvPage()
-    setActiveNav('nav-film')
+    showIptvPage();
+    setActiveNav('nav-film');
 
-    const root = ensureRoot()
+    const root = ensureRoot();
     root.innerHTML = `
       <div class="container iptv-container">
         <div class="iptv-loading">Caricamento film…</div>
       </div>
-    `
+    `;
 
     try {
-      let movie = null
+      let movie = null;
 
       if (window.IPTV && typeof window.IPTV.getMovieById === 'function') {
-        movie = await window.IPTV.getMovieById(id)
+        movie = await window.IPTV.getMovieById(id);
       } else {
-        const { movies } = await getCatalog()
-        movie = (movies || []).find(m => String(m.id) === String(id))
+        const { movies } = await getCatalog();
+        movie = (movies || []).find(m => String(m.id) === String(id));
       }
 
       if (!movie) {
@@ -550,48 +748,48 @@
             <p class="iptv-empty">Film non trovato.</p>
             <button class="iptv-back-btn" onclick="location.hash='#/film'">⬅ Torna ai film</button>
           </div>
-        `
-        return
+        `;
+        return;
       }
 
-      // salva "continua a guardare" per questo film
+      // salva "continua a guardare" per questo film (entry base)
       if (window.IPTVProgress) {
-        window.IPTVProgress.saveMovieProgress(movie)
+        window.IPTVProgress.saveMovieProgress(movie);
       }
 
-      renderPlayerPage({ type: 'film', item: movie })
+      renderPlayerPage({ type: 'film', item: movie });
     } catch (e) {
-      console.error('[IPTV] errore player Film', e)
+      console.error('[IPTV] errore player Film', e);
       root.innerHTML = `
         <div class="container iptv-container">
           <p class="iptv-empty">Errore nel caricamento del film.</p>
           <button class="iptv-back-btn" onclick="location.hash='#/film'">⬅ Torna ai film</button>
         </div>
-      `
+      `;
     }
   }
 
   // ---------- PLAYER SERIE + EPISODI (stagione 1) ----------
 
   async function renderSeriePlayer(id) {
-    showIptvPage()
-    setActiveNav('nav-serie')
+    showIptvPage();
+    setActiveNav('nav-serie');
 
-    const root = ensureRoot()
+    const root = ensureRoot();
     root.innerHTML = `
       <div class="container iptv-container">
         <div class="iptv-loading">Caricamento serie…</div>
       </div>
-    `
+    `;
 
     try {
-      let show = null
+      let show = null;
 
       if (window.IPTV && typeof window.IPTV.getSerieById === 'function') {
-        show = await window.IPTV.getSerieById(id)
+        show = await window.IPTV.getSerieById(id);
       } else {
-        const { series } = await getCatalog()
-        show = (series || []).find(s => String(s.id) === String(id))
+        const { series } = await getCatalog();
+        show = (series || []).find(s => String(s.id) === String(id));
       }
 
       if (!show) {
@@ -600,8 +798,8 @@
             <p class="iptv-empty">Serie non trovata.</p>
             <button class="iptv-back-btn" onclick="location.hash='#/serie'">⬅ Torna alle serie</button>
           </div>
-        `
-        return
+        `;
+        return;
       }
 
       const normalizedSeasons = Array.isArray(show.seasons)
@@ -609,7 +807,7 @@
             .map(season => {
               const seasonNumber = typeof season.season_number === 'number'
                 ? season.season_number
-                : Number(season.season_number)
+                : Number(season.season_number);
 
               return {
                 season_number: Number.isFinite(seasonNumber) ? seasonNumber : null,
@@ -620,38 +818,39 @@
                     ? season.episodes
                     : 0,
                 air_date: season.air_date || ''
-              }
+              };
             })
             .filter(season => Number.isFinite(season.season_number))
             .sort((a, b) => a.season_number - b.season_number)
-        : []
+        : [];
 
-      const filteredSeasons = normalizedSeasons.filter(season => season.season_number > 0)
-      const seasons = filteredSeasons.length ? filteredSeasons : normalizedSeasons
+      const filteredSeasons = normalizedSeasons.filter(season => season.season_number > 0);
+      const seasons = filteredSeasons.length ? filteredSeasons : normalizedSeasons;
 
-      const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1
+      const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
 
+      const baseTvUrl = `https://vixsrc.to/tv/${show.id}/${defaultSeasonNumber}/1`;
       show = {
         ...show,
         seasons,
-        url: `https://vixsrc.to/tv/${show.id}/${defaultSeasonNumber}/1?autoplay=true&primaryColor=B20710&lang=it`
-      }
+        url: `${baseTvUrl}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`
+      };
 
-      // 🔴 appena apro la pagina serie, segno già "continua a guardare"
+      // appena apro la pagina serie, segno già "continua a guardare"
       if (window.IPTVProgress) {
-        window.IPTVProgress.saveEpisodeProgress(show, defaultSeasonNumber, 1)
+        window.IPTVProgress.saveEpisodeProgress(show, defaultSeasonNumber, 1);
       }
 
-      // Render base (hero + player vuoto o url base)
-      renderPlayerPage({ type: 'serie', item: show })
+      // Render base (hero + player)
+      renderPlayerPage({ type: 'serie', item: show });
 
       // Sezione episodi
-      const container = root.querySelector('.iptv-player-page .container')
-      const iframe    = root.querySelector('.iptv-player-frame')
-      if (!container || !iframe) return
+      const container = root.querySelector('.iptv-player-page .container');
+      const iframe    = root.querySelector('.iptv-player-frame');
+      if (!container || !iframe) return;
 
-      const episodesSection = document.createElement('section')
-      episodesSection.className = 'iptv-episodes-section'
+      const episodesSection = document.createElement('section');
+      episodesSection.className = 'iptv-episodes-section';
       episodesSection.innerHTML = `
         <div class="iptv-episodes-head">
           <div class="iptv-season-bar" role="tablist"></div>
@@ -663,108 +862,108 @@
         <div class="iptv-episodes-list">
           <div class="iptv-loading">Caricamento episodi…</div>
         </div>
-      `
-      container.appendChild(episodesSection)
+      `;
+      container.appendChild(episodesSection);
 
-      const seasonBar = episodesSection.querySelector('.iptv-season-bar')
-      const currentSeasonLabel = episodesSection.querySelector('.iptv-current-season')
-      const listHost = episodesSection.querySelector('.iptv-episodes-list')
+      const seasonBar = episodesSection.querySelector('.iptv-season-bar');
+      const currentSeasonLabel = episodesSection.querySelector('.iptv-current-season');
+      const listHost = episodesSection.querySelector('.iptv-episodes-list');
 
-      if (!listHost) return
+      if (!listHost) return;
 
       const getSeasonDisplayName = season => {
-        if (!season) return ''
+        if (!season) return '';
 
-        const fallback = `Stagione ${season.season_number}`
+        const fallback = `Stagione ${season.season_number}`;
 
         if (!season.name) {
-          return fallback
+          return fallback;
         }
 
-        const normalizedName = season.name.trim()
-        const genericMatch = /^stagione\s+\d+$/i
-        const englishGenericMatch = /^season\s+\d+$/i
+        const normalizedName = season.name.trim();
+        const genericMatch = /^stagione\s+\d+$/i;
+        const englishGenericMatch = /^season\s+\d+$/i;
 
         if (genericMatch.test(normalizedName) || englishGenericMatch.test(normalizedName)) {
-          return fallback
+          return fallback;
         }
 
-        return normalizedName
-      }
+        return normalizedName;
+      };
 
       const updateSeasonLabel = seasonNumber => {
-        if (!currentSeasonLabel) return
-        const season = seasons.find(s => s.season_number === seasonNumber)
-        const label = getSeasonDisplayName(season) || `Stagione ${seasonNumber}`
-        currentSeasonLabel.textContent = label
-      }
+        if (!currentSeasonLabel) return;
+        const season = seasons.find(s => s.season_number === seasonNumber);
+        const label = getSeasonDisplayName(season) || `Stagione ${seasonNumber}`;
+        currentSeasonLabel.textContent = label;
+      };
 
-      let currentSeasonNumber = defaultSeasonNumber
-      let seasonRequestId = 0
+      let currentSeasonNumber = defaultSeasonNumber;
+      let seasonRequestId = 0;
 
-      episodesSection.classList.toggle('no-seasons', seasons.length === 0)
+      episodesSection.classList.toggle('no-seasons', seasons.length === 0);
 
       if (seasonBar && seasons.length) {
         seasons.forEach(season => {
-          const btn = document.createElement('button')
-          btn.type = 'button'
-          btn.className = 'iptv-season-btn'
-          btn.dataset.season = String(season.season_number)
-          btn.textContent = getSeasonDisplayName(season)
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'iptv-season-btn';
+          btn.dataset.season = String(season.season_number);
+          btn.textContent = getSeasonDisplayName(season);
 
           btn.addEventListener('click', () => {
-            if (currentSeasonNumber === season.season_number) return
-            loadSeason(season.season_number, { scrollToTop: true })
-          })
+            if (currentSeasonNumber === season.season_number) return;
+            loadSeason(season.season_number, { scrollToTop: true });
+          });
 
-          seasonBar.appendChild(btn)
-        })
+          seasonBar.appendChild(btn);
+        });
       }
 
       const applySeasonActiveState = targetSeasonNumber => {
-        if (!seasonBar) return
+        if (!seasonBar) return;
         seasonBar.querySelectorAll('.iptv-season-btn').forEach(btn => {
-          const btnSeason = Number(btn.dataset.season)
+          const btnSeason = Number(btn.dataset.season);
           if (btnSeason === targetSeasonNumber) {
-            btn.classList.add('active')
+            btn.classList.add('active');
           } else {
-            btn.classList.remove('active')
+            btn.classList.remove('active');
           }
-        })
-      }
+        });
+      };
 
       async function loadSeason(targetSeasonNumber, { scrollToTop = false } = {}) {
         if (!window.IPTV || typeof window.IPTV.getSerieSeasonEpisodes !== 'function') {
-          listHost.innerHTML = `<p class="iptv-empty">Funzione episodi non disponibile.</p>`
-          return
+          listHost.innerHTML = `<p class="iptv-empty">Funzione episodi non disponibile.</p>`;
+          return;
         }
 
-        currentSeasonNumber = targetSeasonNumber
-        applySeasonActiveState(targetSeasonNumber)
-        updateSeasonLabel(targetSeasonNumber)
+        currentSeasonNumber = targetSeasonNumber;
+        applySeasonActiveState(targetSeasonNumber);
+        updateSeasonLabel(targetSeasonNumber);
 
-        const requestId = ++seasonRequestId
-        listHost.innerHTML = `<div class="iptv-loading">Caricamento episodi…</div>`
+        const requestId = ++seasonRequestId;
+        listHost.innerHTML = `<div class="iptv-loading">Caricamento episodi…</div>`;
 
         try {
-          const episodes = await window.IPTV.getSerieSeasonEpisodes(show.id, targetSeasonNumber)
+          const episodes = await window.IPTV.getSerieSeasonEpisodes(show.id, targetSeasonNumber);
 
           if (requestId !== seasonRequestId) {
-            return
+            return;
           }
 
           if (!episodes.length) {
-            listHost.innerHTML = `<p class="iptv-empty">Nessun episodio trovato per questa stagione.</p>`
-            return
+            listHost.innerHTML = `<p class="iptv-empty">Nessun episodio trovato per questa stagione.</p>`;
+            return;
           }
 
-          const fragment = document.createDocumentFragment()
+          const fragment = document.createDocumentFragment();
 
           episodes.forEach(ep => {
-            const episodeNumber = ep.episode_number
-            const item = document.createElement('button')
-            item.type = 'button'
-            item.className = 'iptv-episode-item'
+            const episodeNumber = ep.episode_number;
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'iptv-episode-item';
             item.innerHTML = `
               <div class="iptv-episode-meta">
                 <div class="iptv-episode-number">E${episodeNumber}</div>
@@ -774,138 +973,138 @@
                 ? `<div class="iptv-episode-overview">${ep.overview}</div>`
                 : ''
               }
-            `
+            `;
 
             item.addEventListener('click', () => {
-              const url = `https://vixsrc.to/tv/${show.id}/${targetSeasonNumber}/${episodeNumber}?autoplay=true&primaryColor=B20710&lang=it`
-
-              iframe.src = url
+              const baseUrl = `https://vixsrc.to/tv/${show.id}/${targetSeasonNumber}/${episodeNumber}`;
+              const url = `${baseUrl}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+              iframe.src = url;
 
               if (window.IPTVProgress) {
-                window.IPTVProgress.saveEpisodeProgress(show, targetSeasonNumber, episodeNumber)
+                window.IPTVProgress.saveEpisodeProgress(show, targetSeasonNumber, episodeNumber);
               }
 
               listHost
                 .querySelectorAll('.iptv-episode-item')
-                .forEach(btn => btn.classList.remove('active'))
-              item.classList.add('active')
-            })
+                .forEach(btn => btn.classList.remove('active'));
+              item.classList.add('active');
+            });
 
-            fragment.appendChild(item)
-          })
+            fragment.appendChild(item);
+          });
 
-          listHost.innerHTML = ''
-          listHost.appendChild(fragment)
+          listHost.innerHTML = '';
+          listHost.appendChild(fragment);
 
-          const firstButton = listHost.querySelector('.iptv-episode-item')
+          const firstButton = listHost.querySelector('.iptv-episode-item');
           if (firstButton) {
-            firstButton.classList.add('active')
+            firstButton.classList.add('active');
           }
 
           if (scrollToTop) {
-            listHost.scrollTo({ top: 0, behavior: 'smooth' })
+            listHost.scrollTo({ top: 0, behavior: 'smooth' });
           }
         } catch (err) {
-          console.error('[IPTV] errore caricamento episodi serie', err)
+          console.error('[IPTV] errore caricamento episodi serie', err);
           if (requestId === seasonRequestId) {
-            listHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento degli episodi.</p>`
+            listHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento degli episodi.</p>`;
           }
         }
       }
 
-      updateSeasonLabel(currentSeasonNumber)
-      applySeasonActiveState(currentSeasonNumber)
+      updateSeasonLabel(currentSeasonNumber);
+      applySeasonActiveState(currentSeasonNumber);
 
       if (window.IPTV && typeof window.IPTV.getSerieSeasonEpisodes === 'function') {
-        loadSeason(currentSeasonNumber)
+        loadSeason(currentSeasonNumber);
       } else {
-        listHost.innerHTML = `<p class="iptv-empty">Funzione episodi non disponibile.</p>`
+        listHost.innerHTML = `<p class="iptv-empty">Funzione episodi non disponibile.</p>`;
       }
     } catch (e) {
-      console.error('[IPTV] errore player Serie', e)
+      console.error('[IPTV] errore player Serie', e);
       root.innerHTML = `
         <div class="container iptv-container">
           <p class="iptv-empty">Errore nel caricamento della serie.</p>
           <button class="iptv-back-btn" onclick="location.hash='#/serie'">⬅ Torna alle serie</button>
         </div>
-      `
+      `;
     }
   }
 
   // ---------- ROUTER HASH ----------
 
   function onRoute() {
-    const raw = (location.hash || '#').toLowerCase()
+    const raw = (location.hash || '#').toLowerCase();
 
-    let hash = raw.startsWith('#') ? raw.slice(1) : raw
+    let hash = raw.startsWith('#') ? raw.slice(1) : raw;
 
     if (hash.startsWith('/')) {
-      hash = hash.slice(1)
+      hash = hash.slice(1);
     }
 
     if (!hash) {
-      hideIptvPage()
-      return
+      hideIptvPage();
+      return;
     }
 
-    const [section, maybeId] = hash.split('/')
+    const [section, maybeId] = hash.split('/');
 
     if (section === 'film') {
       if (maybeId) {
-        renderFilmPlayer(maybeId)
+        renderFilmPlayer(maybeId);
       } else {
-        renderFilmList()
+        renderFilmList();
       }
-      return
+      return;
     }
 
     if (section === 'serie') {
       if (maybeId) {
-        renderSeriePlayer(maybeId)
+        renderSeriePlayer(maybeId);
       } else {
-        renderSerieList()
+        renderSerieList();
       }
-      return
+      return;
     }
 
-    hideIptvPage()
+    hideIptvPage();
   }
 
   // ---------- CLICK NAVBAR ----------
 
   document.addEventListener('click', (e) => {
-    const link = e.target.closest('.nav-center-box a')
-    if (!link) return
+    const link = e.target.closest('.nav-center-box a');
+    if (!link) return;
 
-    const href = (link.getAttribute('href') || '').toLowerCase()
-    const id   = link.id
+    const href = (link.getAttribute('href') || '').toLowerCase();
+    const id   = link.id;
 
     // 🏠 HOME → url base e chiudi overlay IPTV
     if (id === 'navHomeBtn') {
-      e.preventDefault()
-      hideIptvPage()
-      location.hash = '#'
-      return
+      e.preventDefault();
+      hideIptvPage();
+      location.hash = '#';
+      return;
     }
 
     // "Tutti" → chiudi overlay, lascia al router anime
     if (id === 'navAllBtn') {
-      hideIptvPage()
-      return
+      hideIptvPage();
+      return;
     }
 
     // Film / Serie → IPTV
     if (href.includes('#film') || href.includes('#/film') ||
         href.includes('#serie') || href.includes('#/serie')) {
-      setTimeout(onRoute, 0)
-      return
+      setTimeout(onRoute, 0);
+      return;
     }
 
     // qualsiasi altra cosa → chiudi overlay IPTV
-    hideIptvPage()
-  })
+    hideIptvPage();
+  });
 
-  window.addEventListener('hashchange', onRoute)
-  window.addEventListener('load', onRoute)
+  window.addEventListener('hashchange', onRoute);
+  window.addEventListener('load', onRoute);
 
-})()
+})();

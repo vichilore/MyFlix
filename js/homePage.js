@@ -58,13 +58,20 @@ class HomePage {
       }));
     }
 
-    // 1b) FILM + SERIE TV (IPTVProgress)
+        // 1b) IPTV resume: prefer backend (Supabase), fallback to local cache
+    try {
+      const fromBackend = await HomePage.fetchIptvResumeItems(20);
+      if (fromBackend && fromBackend.length) {
+        resumeItems = [...resumeItems, ...fromBackend];
+      }
+    } catch (e) {
+      console.warn('IPTV resume via backend failed:', e);
+    }
+
     if (window.IPTVProgress && typeof window.IPTVProgress.getAllResume === 'function') {
       const iptvResume = window.IPTVProgress.getAllResume(20); // array
-
       if (Array.isArray(iptvResume) && iptvResume.length) {
         const iptvItems = iptvResume.map(row => ({
-          // se nel progress hai tmdbId usalo, altrimenti row.id
           id: row.tmdbId || row.id,
           title: row.title,
           image: row.image,
@@ -73,13 +80,21 @@ class HomePage {
           rating: row.rating || 0,
           kind: row.kind === 'movie' ? 'movie' : 'tv'
         }));
-
-        // unisco anime + iptv
         resumeItems = [...resumeItems, ...iptvItems];
       }
     }
 
+    // de-duplicate by kind+id
     if (resumeItems.length) {
+      const seen = new Set();
+      resumeItems = resumeItems.filter(it => {
+        const k = (it.kind||'') + ':' + String(it.id);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    }
+if (resumeItems.length) {
       const rowResume = Carousel.create({
         id: 'row-resume',
         title: 'Riprendi',
@@ -211,11 +226,69 @@ class HomePage {
         console.warn("fetchResumeDataDetailed backend fail:", err);
       }
     }
+    
 
     // fallback locale (non loggato o nessun dato)
     return HomePage.fetchResumeDataFromLocal();
   }
+  // -------------------------------------------------
+  // fetchIptvResumeItems(limit)
+  // Prefer Supabase backend; returns mapped items for carousel
+  // -------------------------------------------------
+  static async fetchIptvResumeItems(limit = 20) {
+    if (!Auth.isLoggedIn || !Auth.isLoggedIn()) return [];
+    if (!window.API || typeof API.getIptvResume !== 'function') return [];
 
+    try {
+      const res = await API.getIptvResume(limit);
+      const rows = Array.isArray(res?.items) ? res.items : [];
+      if (!rows.length) return [];
+
+      const tasks = rows.map(async (row) => {
+        const id = String(row.provider_video_id || '').trim();
+        if (!id) return null;
+
+        const details = await HomePage.loadIptvDetailsById(id).catch(() => null);
+        if (!details) return null;
+
+        return {
+          id: details.id,
+          title: details.title,
+          image: details.poster || details.image || details.backdrop || '',
+          lang: 'IT',
+          year: details.year || '',
+          rating: details.rating || 0,
+          kind: details.kind === 'tv' ? 'tv' : 'movie'
+        };
+      });
+
+      const settled = await Promise.allSettled(tasks);
+      return settled
+        .map(x => (x.status === 'fulfilled' ? x.value : null))
+        .filter(Boolean);
+    } catch (e) {
+      console.warn('fetchIptvResumeItems error:', e);
+      return [];
+    }
+  }
+
+  // Try TMDB movie first, then tv; return normalized info
+  static async loadIptvDetailsById(id) {
+    if (!window.IPTV) return null;
+    try {
+      if (typeof IPTV.getMovieById === 'function') {
+        const m = await IPTV.getMovieById(id);
+        if (m && m.id != null) return { ...m, kind: 'movie' };
+      }
+    } catch {}
+    try {
+      if (typeof IPTV.getSerieById === 'function') {
+        const s = await IPTV.getSerieById(id);
+        if (s && s.id != null) return { ...s, kind: 'tv' };
+      }
+    } catch {}
+    return null;
+  }
   // -------------------------------------------------
   // fetchResumeDataFromLocal()
   // SOLO anime, come prima (sincrono)
@@ -272,3 +345,6 @@ class HomePage {
     return `al minuto ${mins}`;
   }
 }
+
+
+
