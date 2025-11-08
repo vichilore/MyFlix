@@ -11,6 +11,14 @@ class UIManager {
     watch: $('#watch'),
     allGrid: $('#allGrid'),
     homeCarousels: $('#homeCarousels'),
+    homeHero: $('#homeHero'),
+    heroBackground: $('#heroBackground'),
+    heroTitle: $('#heroTitle'),
+    heroDescription: $('#heroDescription'),
+    heroMeta: $('#heroMeta'),
+    heroTag: $('#heroTag'),
+    heroPlay: $('#heroPlay'),
+    heroMore: $('#heroMore'),
     searchStatus: $('#searchStatus'),
     searchInput: $('#searchInput'),
     searchClear: $('#searchClear'),
@@ -24,7 +32,7 @@ class UIManager {
     this.elements.home.style.display = 'block';
 
     requestAnimationFrame(() => {
-      const nb = $('.nav-center-box')?.getBoundingClientRect().bottom || 0;
+      const nb = $('.topbar')?.getBoundingClientRect().bottom || 0;
       document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
     });
 
@@ -37,7 +45,7 @@ class UIManager {
     this.elements.all.style.display = 'block';
 
     requestAnimationFrame(() => {
-      const nb = $('.nav-center-box')?.getBoundingClientRect().bottom || 0;
+      const nb = $('.topbar')?.getBoundingClientRect().bottom || 0;
       document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
     });
 
@@ -50,7 +58,7 @@ class UIManager {
     this.elements.watch.style.display = 'block';
 
     requestAnimationFrame(() => {
-      const nb = $('.nav-center-box')?.getBoundingClientRect().bottom || 0;
+      const nb = $('.topbar')?.getBoundingClientRect().bottom || 0;
       document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
     });
 

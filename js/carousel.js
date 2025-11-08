@@ -19,20 +19,43 @@ class Carousel {
     track.id = `${id}-track`;
     row.appendChild(track);
 
-    const updateFades = () => {
-      const max = track.scrollWidth - track.clientWidth;
-      row.classList.toggle('has-fade-right', track.scrollLeft < max - 2);
-    };
-
-    track.addEventListener('scroll', updateFades, { passive: true });
-    new ResizeObserver(updateFades).observe(track);
-    requestAnimationFrame(updateFades);
-
     for (const item of items) {
       track.appendChild(this.createCard(item, size, showProgress, onClick));
     }
 
-    this.setupControls(row, track, id, size);
+    const controls = this.setupControls(row, track, id, size);
+
+    if (controls && typeof controls.updateState === 'function') {
+      const updateState = controls.updateState;
+
+      let rafId = null;
+      const requestUpdate = () => {
+        if (rafId != null) {
+          cancelAnimationFrame(rafId);
+        }
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          updateState();
+        });
+      };
+
+      track.addEventListener('scroll', requestUpdate, { passive: true });
+
+      if (typeof track.addEventListener === 'function' && 'onscrollend' in track) {
+        track.addEventListener('scrollend', updateState);
+      }
+
+      if (typeof ResizeObserver === 'function') {
+        const resizeObserver = new ResizeObserver(updateState);
+        resizeObserver.observe(track);
+        track.__carouselResizeObserver = resizeObserver;
+      } else {
+        window.addEventListener('resize', requestUpdate);
+      }
+
+      requestAnimationFrame(updateState);
+    }
+
     return row;
   }
 
@@ -188,16 +211,73 @@ class Carousel {
     const prev = row.querySelector(`#${id}-prev`);
     const next = row.querySelector(`#${id}-next`);
 
-   // dentro setupControls, sostituisci la funzione step()
-    const step = () => {
-      const c = track.querySelector('.c-item');
-      const w = c ? c.getBoundingClientRect().width : 280;
-      const visible = Math.floor(track.clientWidth / w) || 1;
-      return w * (visible - 0.5); // sfoglia quasi una pagina
+    const computeStep = () => {
+      const firstItem = track.querySelector('.c-item');
+      if (!firstItem) return track.clientWidth || 0;
+
+      const rect = firstItem.getBoundingClientRect();
+      let itemWidth = rect.width || 0;
+      if (itemWidth <= 0) {
+        itemWidth = track.clientWidth;
+      }
+
+      let gap = 0;
+      if (typeof window !== 'undefined' && window.getComputedStyle) {
+        const styles = window.getComputedStyle(track);
+        const rawGap = styles.columnGap || styles.gap || '0';
+        const parsed = parseFloat(rawGap);
+        gap = Number.isFinite(parsed) ? parsed : 0;
+      }
+
+      const stepWidth = itemWidth + gap;
+      if (stepWidth <= 0) {
+        return itemWidth || track.clientWidth || 0;
+      }
+
+      const visible = Math.max(1, Math.round(track.clientWidth / stepWidth));
+      return stepWidth * Math.max(visible - 0.2, 1);
     };
 
-    prev.onclick = () => track.scrollBy({ left: -step(), behavior: 'smooth' });
-    next.onclick = () => track.scrollBy({ left: step(), behavior: 'smooth' });
+    const updateState = () => {
+      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+      const current = track.scrollLeft;
+      const tolerance = 6;
+      const hasOverflow = maxScroll > tolerance;
+      const atStart = current <= tolerance;
+      const atEnd = current >= (maxScroll - tolerance);
+
+      row.classList.toggle('has-fade-left', hasOverflow && !atStart);
+      row.classList.toggle('has-fade-right', hasOverflow && !atEnd);
+
+      if (prev) prev.disabled = !hasOverflow || atStart;
+      if (next) next.disabled = !hasOverflow || atEnd;
+    };
+
+    const scrollByStep = (direction) => {
+      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+      if (maxScroll <= 0) {
+        updateState();
+        return;
+      }
+
+      const delta = computeStep() * direction;
+      const target = Math.max(0, Math.min(track.scrollLeft + delta, maxScroll));
+      track.scrollTo({ left: target, behavior: 'smooth' });
+
+      if (!('onscrollend' in track)) {
+        setTimeout(updateState, 350);
+      }
+    };
+
+    if (prev) {
+      prev.addEventListener('click', () => scrollByStep(-1));
+    }
+
+    if (next) {
+      next.addEventListener('click', () => scrollByStep(1));
+    }
+
+    return { updateState };
   }
 }
 
