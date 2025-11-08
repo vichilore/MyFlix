@@ -202,9 +202,10 @@ class Carousel {
     };
 
     const updateState = () => {
-      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
-      const atStart = track.scrollLeft <= 2;
-      const atEnd = track.scrollLeft >= (maxScroll - 2);
+      const maxScroll = Math.max(0, Math.round(track.scrollWidth - track.clientWidth));
+      const current = Math.round(track.scrollLeft);
+      const atStart = current <= 2;
+      const atEnd = current >= (maxScroll - 2);
 
       row.classList.toggle('has-fade-left', !atStart && maxScroll > 0);
       row.classList.toggle('has-fade-right', !atEnd && maxScroll > 0);
@@ -215,13 +216,19 @@ class Carousel {
 
     if (prev) {
       prev.addEventListener('click', () => {
-        track.scrollBy({ left: -step(), behavior: 'smooth' });
+        const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+        const target = Math.max(0, Math.min(track.scrollLeft - step(), maxScroll));
+        track.scrollTo({ left: target, behavior: 'smooth' });
+        requestAnimationFrame(updateState);
       });
     }
 
     if (next) {
       next.addEventListener('click', () => {
-        track.scrollBy({ left: step(), behavior: 'smooth' });
+        const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+        const target = Math.max(0, Math.min(track.scrollLeft + step(), maxScroll));
+        track.scrollTo({ left: target, behavior: 'smooth' });
+        requestAnimationFrame(updateState);
       });
     }
 
