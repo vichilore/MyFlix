@@ -19,5 +19,8 @@
   "description": "",
   "devDependencies": {
     "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "ogl": "^1.0.11"
   }
 }

@@ -196,16 +196,13 @@
         throw new Error('Funzioni IPTV recommended/search non disponibili');
       }
 
-      // 1) Film consigliati
       const recommended = await window.IPTV.loadRecommendedMovies(2);
       rowsHost.innerHTML = '';
 
       recommendedItems = (recommended || []).map(mapMovieToCard);
 
-      // 2) Prima render: solo "Consigliati per te"
       renderHome();
 
-      // 3) Search
       let lastSearchId = 0;
 
       if (searchInput) {
@@ -328,16 +325,13 @@
         throw new Error('Funzioni IPTV serie recommended/search non disponibili');
       }
 
-      // 1) Serie consigliate
       const recommended = await window.IPTV.loadRecommendedSeries(2);
       rowsHost.innerHTML = '';
 
       recommendedItems = (recommended || []).map(mapSerieToCard);
 
-      // 2) Prima render
       renderHome();
 
-      // 3) Search
       let lastSearchId = 0;
 
       if (searchInput) {
@@ -377,6 +371,126 @@
     }
   }
 
+  // ---- Bridge postMessage events from vixsrc iframe ----
+
+  const lastSentByVideo = new Map();
+  const lastKnownTimeByVideo = new Map(); // cache dell'ultimo (currentTime, duration) per video
+  let iptvBridgeAttached = false;
+
+  function shouldSendTimeupdate(videoId) {
+    const key = videoId + '|timeupdate';
+    const now = Date.now();
+    const last = lastSentByVideo.get(key) || 0;
+    const minGap = 1000; // 1 secondo
+    if (now - last < minGap) return false;
+    lastSentByVideo.set(key, now);
+    return true;
+  }
+
+  function attachIptvEventBridgeOnce() {
+    if (iptvBridgeAttached) return;
+    iptvBridgeAttached = true;
+
+    window.addEventListener('message', (e) => {
+      let raw = e.data;
+      let msg = raw;
+
+      // Se è STRINGA JSON (caso VixSrc) → parse
+      if (typeof raw === 'string') {
+        try {
+          msg = JSON.parse(raw);
+        } catch {
+          return;
+        }
+      }
+
+      // Aspettato:
+      // { type: 'PLAYER_EVENT', data: { event, currentTime?, duration?, video_id, ... } }
+      if (!msg || msg.type !== 'PLAYER_EVENT' || !msg.data) {
+        return;
+      }
+
+      const inner = msg.data || {};
+      const evName = String(inner.event || '');
+      const vixVideoId = inner.video_id != null ? String(inner.video_id) : '';
+
+      // ID logico TMDB che usiamo per backend e posizione
+      const logicalId = (typeof window.IPTV_CURRENT_MEDIA_ID === 'string' &&
+                         window.IPTV_CURRENT_MEDIA_ID)
+        ? window.IPTV_CURRENT_MEDIA_ID
+        : vixVideoId; // fallback
+
+      let currentTime = Number(inner.currentTime);
+      let duration    = Number(inner.duration);
+      let hasTime     = Number.isFinite(currentTime) && Number.isFinite(duration);
+
+      if (!logicalId) {
+        return;
+      }
+
+      // se l'evento ha tempo valido, aggiorniamo la cache locale
+      if (hasTime) {
+        lastKnownTimeByVideo.set(logicalId, { currentTime, duration });
+      } else {
+        // es. 'pause' di VixSrc → niente currentTime/duration
+        const last = lastKnownTimeByVideo.get(logicalId);
+        if (last) {
+          currentTime = last.currentTime;
+          duration    = last.duration;
+          hasTime = true;
+        }
+      }
+
+      // timeupdate senza tempo → scarta
+      if (evName === 'timeupdate' && !hasTime) {
+        return;
+      }
+
+      // ---------- BACKEND ----------
+
+      const apiRef = (typeof API !== 'undefined')
+        ? API
+        : (typeof window !== 'undefined' ? window.API : null);
+
+      if (!apiRef || typeof apiRef.saveIptvEvent !== 'function') {
+        return;
+      }
+
+      try {
+        const isTimeupdate = evName === 'timeupdate';
+        const isImportant  =
+          evName === 'pause' || evName === 'ended' || evName === 'seeked';
+
+        // info extra su media / stagione / episodio
+        const mediaType = window.IPTV_CURRENT_MEDIA_TYPE || null;
+        const seasonNum = Number(window.IPTV_CURRENT_SEASON_NUMBER);
+        const episodeNum = Number(window.IPTV_CURRENT_EPISODE_NUMBER);
+
+        const payloadForBackend = {
+          type: 'PLAYER_EVENT',
+          data: {
+            event: evName,
+            currentTime: hasTime ? currentTime : 0,
+            duration:   hasTime ? duration    : 0,
+            video_id: logicalId,           // TMDB id (film o serie)
+            media_type: mediaType,         // 'movie' | 'serie'
+            season: Number.isFinite(seasonNum) && seasonNum > 0 ? seasonNum : null,
+            episode: Number.isFinite(episodeNum) && episodeNum > 0 ? episodeNum : null
+          }
+        };
+
+        if (!isTimeupdate || shouldSendTimeupdate(logicalId) || isImportant) {
+          apiRef.saveIptvEvent(payloadForBackend)
+            .catch(() => {
+              // errori silenziati, evitiamo rumore
+            });
+        }
+      } catch {
+        // silenzioso
+      }
+    });
+  }
+
   // ---------- PLAYER PAGE (hero + iframe) ----------
 
   async function renderPlayerPage({ type, item }) {
@@ -384,6 +498,12 @@
     setActiveNav(type === 'film' ? 'nav-film' : 'nav-serie');
 
     const root = ensureRoot();
+
+    // ID logico globale (TMDB id)
+    window.IPTV_CURRENT_MEDIA_ID = item && item.id != null
+      ? String(item.id)
+      : '';
+    window.IPTV_CURRENT_MEDIA_TYPE = type || null;
 
     const title   = item.title || item.name || 'Senza titolo';
     const year    = item.year || (item.release_date ? String(item.release_date).slice(0, 4) : '');
@@ -398,47 +518,32 @@
       ? `style="background-image: url('${backdrop}');"`
       : '';
 
-    // IPTV film resume (precompute initialSrc and seconds)
     let resumeSeconds = 0;
     let initialSrc = item.url || '';
 
     if (type === 'film') {
-      const base = getVixMovieBaseUrl(item); // es: https://vixsrc.to/movie/786892/
+      const base = getVixMovieBaseUrl(item);
 
-      // URL base: parte da 0
       if (base) {
         initialSrc = `${base}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
       }
 
-      if (window.Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
-        try {
-          const pos = await API.getIptvPosition(String(item.id));
-          console.log('[IPTV] /iptv/position result', pos);
+      try {
+        const pos = await API.getIptvPosition(String(item.id));
+        const seconds = Number(pos?.position?.t ?? 0) || 0;
+        resumeSeconds = seconds;
 
-          const seconds = Number(pos?.position?.t ?? 0) || 0;
-          resumeSeconds = seconds;
-
-          // Se ha guardato almeno 5s, partiamo da lì
-          if (seconds > 5 && base) {
-            initialSrc = `${base}?startAt=${Math.floor(seconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
-          }
-        } catch (err) {
-          console.warn('[IPTV] getIptvPosition error', err);
+        if (seconds > 5 && base) {
+          initialSrc = `${base}?startAt=${Math.floor(seconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
         }
+      } catch (err) {
+        console.warn('[IPTV] getIptvPosition error', err);
       }
     }
 
     if (!initialSrc) {
       initialSrc = item.url || '';
     }
-
-    console.log('[IPTV] iframe initial src', { initialSrc, resumeSeconds });
-
-    try {
-      if ((window.IPTV_DEBUG ?? true)) {
-        console.log('[IPTV] render resume info', { type, id: item?.id, resumeSeconds, initialSrc });
-      }
-    } catch {}
 
     root.innerHTML = `
       <div class="iptv-player-page">
@@ -504,12 +609,11 @@
       </div>
     `;
 
-    const playBtn = root.querySelector('.iptv-btn-play');
     const iframe  = root.querySelector('.iptv-player-frame');
 
-    if (type === 'film' && resumeSeconds > 5) {
+    if (type === 'film' && resumeSeconds > 5 && iframe) {
       const actions = root.querySelector('.iptv-hero-actions');
-      if (actions && iframe) {
+      if (actions) {
         const btn = document.createElement('button');
         btn.className = 'iptv-btn iptv-btn--primary iptv-btn-resume';
         const mm = Math.floor(resumeSeconds / 60);
@@ -521,8 +625,6 @@
             const base = getVixMovieBaseUrl(item) || (item.url || iframe.src);
             const seconds = Math.floor(resumeSeconds);
             const nextSrc = `${base}?startAt=${seconds}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
-
-            console.log('[IPTV] resume click -> src', nextSrc);
             iframe.src = nextSrc;
             iframe.focus();
           } catch (err) {
@@ -531,192 +633,10 @@
         });
 
         actions.insertBefore(btn, actions.firstChild);
-        console.log('[IPTV] resume button injected', { resumeSeconds });
       }
     }
 
-    if (playBtn && iframe) {
-      playBtn.addEventListener('click', () => {
-        iframe.focus();
-      });
-    }
-
-    // 🔵 PANNELLO DEBUG EVENTI
-    const playerSection = root.querySelector('.iptv-player-section');
-    if (playerSection) {
-      const debug = document.createElement('section');
-      debug.className = 'iptv-debug-events';
-      debug.innerHTML = `
-        <div class="iptv-debug-events__head">
-          <h3 style="font-size:14px;margin:0 0 4px;">Debug Player Events</h3>
-          <p style="font-size:12px;margin:0 0 8px;opacity:.8;">
-            Clicca i bottoni per inviare eventi finti oppure guarda i log di quelli reali.
-          </p>
-        </div>
-        <div class="iptv-debug-events__buttons" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
-          <button type="button" class="iptv-debug-btn" data-ev="play">Test PLAY</button>
-          <button type="button" class="iptv-debug-btn" data-ev="pause">Test PAUSE</button>
-          <button type="button" class="iptv-debug-btn" data-ev="seeked">Test SEEKED</button>
-          <button type="button" class="iptv-debug-btn" data-ev="ended">Test ENDED</button>
-          <button type="button" class="iptv-debug-btn" data-ev="timeupdate">Test TIMEUPDATE</button>
-        </div>
-        <pre class="iptv-debug-events__log" style="
-          max-height:180px;
-          overflow:auto;
-          font-size:11px;
-          padding:6px;
-          background:#00000066;
-          border-radius:4px;
-          border:1px solid #ffffff22;
-          margin:0;
-          white-space:pre-wrap;
-        "></pre>
-      `;
-      playerSection.appendChild(debug);
-
-      const logEl = debug.querySelector('.iptv-debug-events__log');
-
-      function appendLog(label, payload) {
-        if (!logEl) return;
-        const time = new Date().toLocaleTimeString();
-        const line = `[${time}] ${label}: ${JSON.stringify(payload)}\n`;
-        logEl.textContent = line + logEl.textContent;
-      }
-
-      // funzione globale usata dal bridge
-      window.IPTV_DEBUG_LOG_EVENT = appendLog;
-
-      // bottoni che mandano eventi finti
-      debug.querySelectorAll('.iptv-debug-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const ev = btn.getAttribute('data-ev') || 'timeupdate';
-          const fakeCurrent = Math.floor(Math.random() * 300);
-          const fakeDuration = 3600;
-          const videoId = item.id;
-
-          appendLog('FAKE SEND', {
-            event: ev,
-            currentTime: fakeCurrent,
-            duration: fakeDuration,
-            video_id: videoId
-          });
-
-          // questo passa dallo stesso onMessage del player vero
-          window.postMessage({
-            type: 'PLAYER_EVENT',
-            data: {
-              event: ev,
-              currentTime: fakeCurrent,
-              duration: fakeDuration,
-              video_id: videoId
-            }
-          }, '*');
-        });
-      });
-    }
-
-    if (iframe) {
-      addIptvEventBridge(iframe, { type, item });
-    }
-  }
-
-  // ---- Bridge postMessage events from vixsrc iframe ----
-
-  const lastSentByVideo = new Map();
-
-  function shouldSend(videoId, evName) {
-    const key = videoId + '|' + evName;
-    const now = Date.now();
-    const last = lastSentByVideo.get(key) || 0;
-    // per i "timeupdate" mando max ogni 5s, gli altri eventi sempre
-    const minGap = evName === 'timeupdate' ? 5000 : 0;
-    if (now - last < minGap) return false;
-    lastSentByVideo.set(key, now);
-    return true;
-  }
-
-  function addIptvEventBridge(iframe, ctx) {
-    if (!iframe) return;
-
-    function onMessage(e) {
-      if (!iframe || !e || !e.data) return;
-
-      const msg = e.data;
-      if (!msg || msg.type !== 'PLAYER_EVENT' || !msg.data) return;
-
-      const { event, currentTime, duration, video_id } = msg.data;
-      if (typeof currentTime !== 'number' || typeof duration !== 'number') return;
-
-      const vid = video_id != null ? String(video_id) : '';
-      if (!vid) return;
-
-      // log visuale
-      try {
-        if (typeof window.IPTV_DEBUG_LOG_EVENT === 'function') {
-          window.IPTV_DEBUG_LOG_EVENT('FROM PLAYER', {
-            event,
-            currentTime,
-            duration,
-            video_id: vid
-          });
-        }
-      } catch {}
-
-      // invio al backend solo se loggato
-      try {
-        if (window.Auth && Auth.isLoggedIn && Auth.isLoggedIn()) {
-          if (shouldSend(vid, String(event))) {
-            try {
-              if (window.IPTV_DEBUG ?? true) {
-                console.log('[IPTV] send PLAYER_EVENT', {
-                  event,
-                  t: Math.floor(currentTime),
-                  d: Math.floor(duration),
-                  video_id: vid
-                });
-              }
-            } catch {}
-
-            API.saveIptvEvent({
-              type: 'PLAYER_EVENT',
-              data: { event, currentTime, duration, video_id: vid }
-            }).catch(err => {
-              try {
-                if (window.IPTV_DEBUG ?? true) {
-                  console.warn('[IPTV] saveIptvEvent FAIL', err);
-                }
-              } catch {}
-            });
-          }
-        }
-      } catch {}
-
-      // cache locale per "continua a guardare"
-      try {
-        if (window.IPTVProgress && ctx && ctx.type === 'film' && ctx.item) {
-          window.IPTVProgress.saveMovieProgress(
-            ctx.item,
-            Math.floor(currentTime),
-            Math.floor(duration)
-          );
-        }
-        // per le serie qui non sappiamo stagione/episodio
-      } catch {}
-    }
-
-    window.addEventListener('message', onMessage);
-
-    // clean-up quando la pagina IPTV viene rimossa
-    try {
-      const root = ensureRoot();
-      const observer = new MutationObserver(() => {
-        if (!document.body.contains(root) || !document.body.contains(iframe)) {
-          window.removeEventListener('message', onMessage);
-          observer.disconnect();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    } catch {}
+    attachIptvEventBridgeOnce();
   }
 
   // ---------- PLAYER FILM ----------
@@ -752,7 +672,6 @@
         return;
       }
 
-      // salva "continua a guardare" per questo film (entry base)
       if (window.IPTVProgress) {
         window.IPTVProgress.saveMovieProgress(movie);
       }
@@ -769,7 +688,7 @@
     }
   }
 
-  // ---------- PLAYER SERIE + EPISODI (stagione 1) ----------
+  // ---------- PLAYER SERIE + EPISODI ----------
 
   async function renderSeriePlayer(id) {
     showIptvPage();
@@ -802,6 +721,7 @@
         return;
       }
 
+      // --- normalizza stagioni ---
       const normalizedSeasons = Array.isArray(show.seasons)
         ? show.seasons
             .map(season => {
@@ -827,24 +747,57 @@
       const filteredSeasons = normalizedSeasons.filter(season => season.season_number > 0);
       const seasons = filteredSeasons.length ? filteredSeasons : normalizedSeasons;
 
-      const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
+      let defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
+      let defaultEpisodeNumber = 1;
+      let resumeSeconds = 0;
 
-      const baseTvUrl = `https://vixsrc.to/tv/${show.id}/${defaultSeasonNumber}/1`;
+      // --- leggi ultima posizione dal backend per questa serie (id TMDB) ---
+      try {
+        const pos = await API.getIptvPosition(String(show.id));
+        const s = Number(pos?.position?.season);
+        const e = Number(pos?.position?.episode);
+        const t = Number(pos?.position?.t ?? 0) || 0;
+
+        if (Number.isFinite(s) && s > 0 && seasons.some(ss => ss.season_number === s)) {
+          defaultSeasonNumber = s;
+        }
+        if (Number.isFinite(e) && e > 0) {
+          defaultEpisodeNumber = e;
+        }
+        resumeSeconds = t;
+      } catch (err) {
+        console.warn('[IPTV] getIptvPosition serie error', err);
+      }
+
+      // set globali per il bridge
+      window.IPTV_CURRENT_MEDIA_ID = String(show.id);
+      window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+      window.IPTV_CURRENT_SEASON_NUMBER = defaultSeasonNumber;
+      window.IPTV_CURRENT_EPISODE_NUMBER = defaultEpisodeNumber;
+
+      // URL player iniziale: stagione/episodio correnti
+      const baseTvUrl = `https://vixsrc.to/tv/${show.id}/${defaultSeasonNumber}/${defaultEpisodeNumber}`;
+
+      let urlParams = `?lang=${VIX_LANG}&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+
+      // se abbiamo un resume "vero", facciamo partire da lì e possiamo anche voler autoplay
+      if (resumeSeconds > 5) {
+        urlParams += `&startAt=${Math.floor(resumeSeconds)}&autoplay=true`;
+      }
+
       show = {
         ...show,
         seasons,
-        url: `${baseTvUrl}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`
+        url: baseTvUrl + urlParams
       };
 
-      // appena apro la pagina serie, segno già "continua a guardare"
       if (window.IPTVProgress) {
-        window.IPTVProgress.saveEpisodeProgress(show, defaultSeasonNumber, 1);
+        // mantieni anche progress locale, se lo usi per "continua a guardare"
+        window.IPTVProgress.saveEpisodeProgress(show, defaultSeasonNumber, defaultEpisodeNumber);
       }
 
-      // Render base (hero + player)
       renderPlayerPage({ type: 'serie', item: show });
 
-      // Sezione episodi
       const container = root.querySelector('.iptv-player-page .container');
       const iframe    = root.querySelector('.iptv-player-frame');
       if (!container || !iframe) return;
@@ -961,10 +914,11 @@
 
           episodes.forEach(ep => {
             const episodeNumber = ep.episode_number;
-            const item = document.createElement('button');
-            item.type = 'button';
-            item.className = 'iptv-episode-item';
-            item.innerHTML = `
+            const itemBtn = document.createElement('button');
+            itemBtn.type = 'button';
+            itemBtn.className = 'iptv-episode-item';
+            itemBtn.dataset.episode = String(episodeNumber);
+            itemBtn.innerHTML = `
               <div class="iptv-episode-meta">
                 <div class="iptv-episode-number">E${episodeNumber}</div>
                 <div class="iptv-episode-title">${ep.title}</div>
@@ -975,30 +929,51 @@
               }
             `;
 
-            item.addEventListener('click', () => {
+            itemBtn.addEventListener('click', () => {
               const baseUrl = `https://vixsrc.to/tv/${show.id}/${targetSeasonNumber}/${episodeNumber}`;
-              const url = `${baseUrl}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+              // quando l'utente cambia episodio manualmente, non forzo startAt
+              const url = `${baseUrl}?lang=${VIX_LANG}&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
               iframe.src = url;
 
               if (window.IPTVProgress) {
                 window.IPTVProgress.saveEpisodeProgress(show, targetSeasonNumber, episodeNumber);
               }
 
+              window.IPTV_CURRENT_SEASON_NUMBER = targetSeasonNumber;
+              window.IPTV_CURRENT_EPISODE_NUMBER = episodeNumber;
+
               listHost
                 .querySelectorAll('.iptv-episode-item')
                 .forEach(btn => btn.classList.remove('active'));
-              item.classList.add('active');
+              itemBtn.classList.add('active');
             });
 
-            fragment.appendChild(item);
+            fragment.appendChild(itemBtn);
           });
 
           listHost.innerHTML = '';
           listHost.appendChild(fragment);
 
           const firstButton = listHost.querySelector('.iptv-episode-item');
-          if (firstButton) {
-            firstButton.classList.add('active');
+
+          // se questa è la stagione su cui abbiamo il resume, evidenzia quell'episodio
+          let buttonToActivate = null;
+          if (targetSeasonNumber === defaultSeasonNumber && defaultEpisodeNumber) {
+            buttonToActivate = listHost.querySelector(
+              `.iptv-episode-item[data-episode="${defaultEpisodeNumber}"]`
+            );
+          }
+
+          if (!buttonToActivate) {
+            buttonToActivate = firstButton;
+          }
+
+          if (buttonToActivate) {
+            buttonToActivate.classList.add('active');
+            const epNum = Number(buttonToActivate.dataset.episode);
+            window.IPTV_CURRENT_SEASON_NUMBER = targetSeasonNumber;
+            window.IPTV_CURRENT_EPISODE_NUMBER =
+              Number.isFinite(epNum) && epNum > 0 ? epNum : null;
           }
 
           if (scrollToTop) {
@@ -1079,7 +1054,6 @@
     const href = (link.getAttribute('href') || '').toLowerCase();
     const id   = link.id;
 
-    // 🏠 HOME → url base e chiudi overlay IPTV
     if (id === 'navHomeBtn') {
       e.preventDefault();
       hideIptvPage();
@@ -1087,24 +1061,24 @@
       return;
     }
 
-    // "Tutti" → chiudi overlay, lascia al router anime
     if (id === 'navAllBtn') {
       hideIptvPage();
       return;
     }
 
-    // Film / Serie → IPTV
     if (href.includes('#film') || href.includes('#/film') ||
         href.includes('#serie') || href.includes('#/serie')) {
       setTimeout(onRoute, 0);
       return;
     }
 
-    // qualsiasi altra cosa → chiudi overlay IPTV
     hideIptvPage();
   });
 
   window.addEventListener('hashchange', onRoute);
-  window.addEventListener('load', onRoute);
+  window.addEventListener('load', () => {
+    attachIptvEventBridgeOnce();
+    onRoute();
+  });
 
 })();

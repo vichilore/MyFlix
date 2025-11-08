@@ -27,7 +27,6 @@ pool.query('select 1 as ok').then(() => {
   console.error('[db] connection test FAILED:', err?.code || err?.name || 'error', err?.message || String(err));
 });
 
-// Ensure tables exist for IPTV progress/events
 (async () => {
   try {
     await pool.query(`
@@ -53,14 +52,21 @@ pool.query('select 1 as ok').then(() => {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY(user_id, provider_video_id)
       );
-      CREATE INDEX IF NOT EXISTS idx_iptv_positions_updated ON iptv_positions(updated_at DESC);
+
+      -- nuove colonne per tipo media e posizione nelle serie
+      ALTER TABLE iptv_positions
+        ADD COLUMN IF NOT EXISTS media_type TEXT,
+        ADD COLUMN IF NOT EXISTS season INTEGER,
+        ADD COLUMN IF NOT EXISTS episode INTEGER;
+
+      CREATE INDEX IF NOT EXISTS idx_iptv_positions_updated
+        ON iptv_positions(updated_at DESC);
     `);
     console.log('[db] iptv tables ensured');
   } catch (e) {
     console.error('[db] ensure iptv tables failed', e);
   }
 })();
-
 function isTransientDbError(err) {
   if (!err) return false;
   const code = err.code || err.name || '';
@@ -138,21 +144,48 @@ app.get("/__db", async (req, res) => {
 
 // Save IPTV player events and update last known position
 // Save IPTV player events and update last known position
+// Save IPTV player events and update last known position
 app.post("/iptv/event", authRequired, async (req, res) => {
   try {
-    // payload: { type:'PLAYER_EVENT', data:{ event, currentTime, duration, video_id } }
+    // Accettiamo sia {type:'PLAYER_EVENT', data:{...}} che payload "flat"
     const body = req.body || {};
-    const data = body.data || body; // accetto anche payload "flat"
-    const { event, currentTime, duration, video_id } = data || {};
+    const data =
+      body && body.type === "PLAYER_EVENT" && body.data
+        ? body.data
+        : body.data || body;
 
-    if (!event || typeof currentTime !== "number" || typeof duration !== "number" || !video_id) {
+    const {
+      event,
+      currentTime,
+      duration,
+      video_id,
+      media_type,
+      season,
+      episode
+    } = data || {};
+
+    if (!event || !video_id) {
       return res.status(400).json({ error: "invalid payload", received: data });
     }
 
     const provider_video_id = String(video_id);
-    const t = Math.max(0, Number(currentTime) || 0);
-    const d = Math.max(0, Number(duration) || 0);
+
+    // normalizziamo i tempi ma NON facciamo 400 se non sono numeri
+    const tNum = Number(currentTime);
+    const dNum = Number(duration);
+
+    const t = Number.isFinite(tNum) && tNum >= 0 ? tNum : 0;
+    const d = Number.isFinite(dNum) && dNum >= 0 ? dNum : 0;
+
     const userId = req.user.id;
+
+    // parse season/episode se presenti
+    const seasonNumber = season != null ? Number(season) : null;
+    const episodeNumber = episode != null ? Number(episode) : null;
+
+    const seasonVal = Number.isFinite(seasonNumber) ? seasonNumber : null;
+    const episodeVal = Number.isFinite(episodeNumber) ? episodeNumber : null;
+    const mediaTypeVal = media_type ? String(media_type) : null;
 
     // 1) Log grezzo dell'evento (storico)
     await pool.query(
@@ -161,24 +194,46 @@ app.post("/iptv/event", authRequired, async (req, res) => {
       [userId, provider_video_id, String(event), t, d]
     );
 
-    // 2) Aggiornamento posizione "ultima nota" SENZA ON CONFLICT
+    // 2) Aggiorna/crea posizione "ultima nota"
     const updateRes = await pool.query(
       `UPDATE iptv_positions
          SET t = $3,
              d = $4,
              last_event = $5,
+             media_type = $6,
+             season = $7,
+             episode = $8,
              updated_at = NOW()
        WHERE user_id = $1
          AND provider_video_id = $2`,
-      [userId, provider_video_id, t, d, String(event)]
+      [
+        userId,
+        provider_video_id,
+        t,
+        d,
+        String(event),
+        mediaTypeVal,
+        seasonVal,
+        episodeVal
+      ]
     );
 
     if (updateRes.rowCount === 0) {
-      // nessuna riga esistente → inserisco
       await pool.query(
-        `INSERT INTO iptv_positions (user_id, provider_video_id, t, d, last_event, updated_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [userId, provider_video_id, t, d, String(event)]
+        `INSERT INTO iptv_positions
+           (user_id, provider_video_id, t, d, last_event, media_type, season, episode, updated_at)
+         VALUES
+           ($1,    $2,               $3, $4, $5,         $6,         $7,     $8,      NOW())`,
+        [
+          userId,
+          provider_video_id,
+          t,
+          d,
+          String(event),
+          mediaTypeVal,
+          seasonVal,
+          episodeVal
+        ]
       );
     }
 
@@ -186,52 +241,102 @@ app.post("/iptv/event", authRequired, async (req, res) => {
   } catch (err) {
     const transient = isTransientDbError(err);
     console.error("iptv/event error", err);
-    // 🔴 mando i dettagli così li vediamo dal frontend
     res.status(transient ? 503 : 500).json({
       error: "server error",
       code: err.code || err.name,
       message: err.message,
-      detail: err.detail || null,
+      detail: err.detail || null
     });
   }
 });
 
-
-// Get last known position for a given provider video id
+// Get last known position for a given provider video id (logico)
 app.get("/iptv/position", authRequired, async (req, res) => {
   try {
     const videoId = req.query.video_id;
-    if (!videoId) return res.status(400).json({ error: 'missing video_id' });
+    if (!videoId) {
+      return res.status(400).json({ error: "missing video_id" });
+    }
+
     const r = await pool.query(
-      `SELECT user_id, provider_video_id, t, d, last_event, updated_at
+      `SELECT user_id,
+              provider_video_id,
+              t,
+              d,
+              last_event,
+              media_type,
+              season,
+              episode,
+              updated_at
        FROM iptv_positions
-       WHERE user_id = $1 AND provider_video_id = $2`,
+       WHERE user_id = $1
+         AND provider_video_id = $2`,
       [req.user.id, String(videoId)]
     );
-    if (!r.rows.length) return res.json({ position: null });
-    res.json({ position: r.rows[0] });
+
+    if (!r.rows.length) {
+      return res.json({ position: null });
+    }
+
+    const row = r.rows[0];
+
+    // shape compatibile col frontend: position.t continua ad esistere
+    res.json({
+      position: {
+        video_id: row.provider_video_id,
+        t: row.t,
+        d: row.d,
+        last_event: row.last_event,
+        media_type: row.media_type,
+        season: row.season,
+        episode: row.episode,
+        updated_at: row.updated_at
+      }
+    });
   } catch (err) {
     const transient = isTransientDbError(err);
-    res.status(transient ? 503 : 500).json({ error: 'server error' });
+    console.error("iptv/position error", err);
+    res.status(transient ? 503 : 500).json({ error: "server error" });
   }
 });
+
 
 // List recent positions to build a resume row
 app.get("/iptv/resume", authRequired, async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 20));
     const r = await pool.query(
-      `SELECT provider_video_id, t, d, last_event, updated_at
+      `SELECT provider_video_id,
+              t,
+              d,
+              last_event,
+              media_type,
+              season,
+              episode,
+              updated_at
        FROM iptv_positions
        WHERE user_id = $1
        ORDER BY updated_at DESC
        LIMIT $2`,
       [req.user.id, limit]
     );
-    res.json({ items: r.rows });
+
+    const items = r.rows.map((row) => ({
+      video_id: row.provider_video_id,
+      t: row.t,
+      d: row.d,
+      last_event: row.last_event,
+      media_type: row.media_type,
+      season: row.season,
+      episode: row.episode,
+      updated_at: row.updated_at
+    }));
+
+    res.json({ items });
   } catch (err) {
     const transient = isTransientDbError(err);
-    res.status(transient ? 503 : 500).json({ error: 'server error' });
+    console.error("iptv/resume error", err);
+    res.status(transient ? 503 : 500).json({ error: "server error" });
   }
 });
 
