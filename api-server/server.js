@@ -164,9 +164,6 @@ app.get("/__db", async (req, res) => {
 });
 
 // Save IPTV player events and update last known position
-// Save IPTV player events and update last known position
-// Save IPTV player events and update last known position
-// Save IPTV player events and update last known position (con protezione da reset a 0)
 app.post("/iptv/event", authRequired, async (req, res) => {
   try {
     // Accettiamo sia {type:'PLAYER_EVENT', data:{...}} che payload "flat"
@@ -188,7 +185,7 @@ app.post("/iptv/event", authRequired, async (req, res) => {
       media_type,
       season,
       episode
-    } = data;
+    } = data || {};
 
     if (!event || !video_id) {
       return res.status(400).json({ error: "missing event or video_id", received: data });
@@ -213,7 +210,7 @@ app.post("/iptv/event", authRequired, async (req, res) => {
     const hasSeason  = Number.isFinite(seasonRaw)  && seasonRaw  > 0;
     const hasEpisode = Number.isFinite(episodeRaw) && episodeRaw > 0;
 
-    // leggo eventuale posizione precedente
+    // leggo eventuale posizione precedente (serve per anti-reset)
     const prevRes = await pool.query(
       `SELECT t, d, media_type, season, episode
        FROM iptv_positions
@@ -269,7 +266,6 @@ app.post("/iptv/event", authRequired, async (req, res) => {
     }
 
     // ---- 1) Storico eventi (iptv_watch_events) ----
-    // Qui salviamo ANCHE media_type / season / episode
     await pool.query(
       `INSERT INTO iptv_watch_events
          (user_id, provider_video_id, event, t, d, media_type, season, episode)
@@ -286,19 +282,22 @@ app.post("/iptv/event", authRequired, async (req, res) => {
       ]
     );
 
-    // ---- 2) Posizione ultima nota (iptv_positions) ----
+    // ---- 2) Posizione ultima nota (iptv_positions) con UPSERT ----
     if (shouldUpdatePosition) {
-      const updateRes = await pool.query(
-        `UPDATE iptv_positions
-           SET t = $3,
-               d = $4,
-               last_event = $5,
-               media_type = $6,
-               season = $7,
-               episode = $8,
-               updated_at = NOW()
-         WHERE user_id = $1
-           AND provider_video_id = $2`,
+      await pool.query(
+        `INSERT INTO iptv_positions
+           (user_id, provider_video_id, t, d, last_event, media_type, season, episode, updated_at)
+         VALUES
+           ($1,    $2,               $3, $4, $5,         $6,         $7,     $8,      NOW())
+         ON CONFLICT (user_id, provider_video_id)
+         DO UPDATE SET
+           t          = EXCLUDED.t,
+           d          = EXCLUDED.d,
+           last_event = EXCLUDED.last_event,
+           media_type = EXCLUDED.media_type,
+           season     = EXCLUDED.season,
+           episode    = EXCLUDED.episode,
+           updated_at = NOW()`,
         [
           userId,
           provider_video_id,
@@ -310,25 +309,6 @@ app.post("/iptv/event", authRequired, async (req, res) => {
           finalEpisode
         ]
       );
-
-      if (updateRes.rowCount === 0) {
-        await pool.query(
-          `INSERT INTO iptv_positions
-             (user_id, provider_video_id, t, d, last_event, media_type, season, episode, updated_at)
-           VALUES
-             ($1,    $2,               $3, $4, $5,         $6,         $7,     $8,      NOW())`,
-          [
-            userId,
-            provider_video_id,
-            t,
-            d,
-            String(event),
-            finalMediaType,
-            finalSeason,
-            finalEpisode
-          ]
-        );
-      }
     }
 
     res.json({
