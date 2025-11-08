@@ -8,6 +8,7 @@
   let iptvRoot = null;
   let catalogCache = null; // { movies: [...], series: [...] }
 
+  window.IPTV_PREVIOUS_POSITION_T = 0;
   const VIX_PRIMARY_COLOR = 'B20710';
   const VIX_SECONDARY_COLOR = '170000';
   const VIX_LANG = 'it';
@@ -387,7 +388,7 @@
     return true;
   }
 
-  function attachIptvEventBridgeOnce() {
+    function attachIptvEventBridgeOnce() {
     if (iptvBridgeAttached) return;
     iptvBridgeAttached = true;
 
@@ -420,13 +421,13 @@
         ? window.IPTV_CURRENT_MEDIA_ID
         : vixVideoId; // fallback
 
-      let currentTime = Number(inner.currentTime);
-      let duration    = Number(inner.duration);
-      let hasTime     = Number.isFinite(currentTime) && Number.isFinite(duration);
-
       if (!logicalId) {
         return;
       }
+
+      let currentTime = Number(inner.currentTime);
+      let duration    = Number(inner.duration);
+      let hasTime     = Number.isFinite(currentTime) && Number.isFinite(duration);
 
       // se l'evento ha tempo valido, aggiorniamo la cache locale
       if (hasTime) {
@@ -441,8 +442,24 @@
         }
       }
 
-      // timeupdate senza tempo → scarta
-      if (evName === 'timeupdate' && !hasTime) {
+      // Se NON abbiamo una coppia tempo/durata valida → NON mandiamo nulla al backend
+      if (!hasTime) {
+        return;
+      }
+
+      // Evita di sovrascrivere una posizione esistente >5s con un evento iniziale a 0s
+      const prevT = (typeof window.IPTV_PREVIOUS_POSITION_T === 'number')
+        ? window.IPTV_PREVIOUS_POSITION_T
+        : null;
+
+      if (
+        prevT && prevT > 5 &&
+        currentTime <= 1 &&                // siamo praticamente a 0
+        (evName === 'play' ||
+         evName === 'pause' ||
+         evName === 'timeupdate')
+      ) {
+        // Primo evento auto-play dopo hard refresh → non toccare il DB
         return;
       }
 
@@ -461,14 +478,23 @@
         const isImportant  =
           evName === 'pause' || evName === 'ended' || evName === 'seeked';
 
+        // normalizziamo i valori da mandare
+        const tSend = Math.max(0, Number(currentTime) || 0);
+        const dSend = Math.max(0, Number(duration) || 0);
+
+        if (!Number.isFinite(tSend) || !Number.isFinite(dSend)) {
+          return;
+        }
+
+        // timeupdate → throttling per video; eventi importanti sempre
         if (!isTimeupdate || shouldSendTimeupdate(logicalId) || isImportant) {
           const payloadForBackend = {
             type: 'PLAYER_EVENT',
             data: {
               event: evName,
-              currentTime: hasTime ? currentTime : 0,
-              duration:   hasTime ? duration    : 0,
-              video_id: logicalId, // 👈 ID logico (TMDB)
+              currentTime: tSend,
+              duration:   dSend,
+              video_id: logicalId,                      // TMDB id
               media_type: window.IPTV_CURRENT_MEDIA_TYPE || null,
               season: window.IPTV_CURRENT_SEASON ?? null,
               episode: window.IPTV_CURRENT_EPISODE ?? null
@@ -485,6 +511,7 @@
       }
     });
   }
+
 
   // ---------- PLAYER PAGE (hero + iframe) ----------
 
@@ -509,6 +536,8 @@
 
     let resumeSeconds = 0;
     let initialSrc = item.url || '';
+
+     window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
 
     // ✳️ Film: usiamo /iptv/position per riprendere da dove era rimasto
     if (type === 'film') {
@@ -760,6 +789,8 @@
           if (Number.isFinite(tNum) && tNum >= 0) {
             resumeSeconds = tNum;
           }
+
+          window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
 
           const sNum = Number(p.season);
           if (Number.isFinite(sNum) && sNum > 0) {

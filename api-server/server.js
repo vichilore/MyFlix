@@ -27,9 +27,11 @@ pool.query('select 1 as ok').then(() => {
   console.error('[db] connection test FAILED:', err?.code || err?.name || 'error', err?.message || String(err));
 });
 
+// Ensure tables exist for IPTV progress/events
 (async () => {
   try {
     await pool.query(`
+      -- storico eventi
       CREATE TABLE IF NOT EXISTS iptv_watch_events (
         id BIGSERIAL PRIMARY KEY,
         user_id BIGINT NOT NULL,
@@ -37,36 +39,55 @@ pool.query('select 1 as ok').then(() => {
         event TEXT NOT NULL,
         t NUMERIC NOT NULL DEFAULT 0,
         d NUMERIC NOT NULL DEFAULT 0,
+        media_type TEXT,
+        season INTEGER,
+        episode INTEGER,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
-      CREATE INDEX IF NOT EXISTS idx_iptv_events_user ON iptv_watch_events(user_id);
-      CREATE INDEX IF NOT EXISTS idx_iptv_events_video ON iptv_watch_events(provider_video_id);
-      CREATE INDEX IF NOT EXISTS idx_iptv_events_created ON iptv_watch_events(created_at);
 
+      CREATE INDEX IF NOT EXISTS idx_iptv_events_user
+        ON iptv_watch_events(user_id);
+      CREATE INDEX IF NOT EXISTS idx_iptv_events_video
+        ON iptv_watch_events(provider_video_id);
+      CREATE INDEX IF NOT EXISTS idx_iptv_events_created
+        ON iptv_watch_events(created_at);
+
+      -- ultima posizione nota
       CREATE TABLE IF NOT EXISTS iptv_positions (
         user_id BIGINT NOT NULL,
         provider_video_id TEXT NOT NULL,
         t NUMERIC NOT NULL DEFAULT 0,
         d NUMERIC NOT NULL DEFAULT 0,
         last_event TEXT,
+        media_type TEXT,
+        season INTEGER,
+        episode INTEGER,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY(user_id, provider_video_id)
       );
 
-      -- nuove colonne per tipo media e posizione nelle serie
-      ALTER TABLE iptv_positions
+      CREATE INDEX IF NOT EXISTS idx_iptv_positions_updated
+        ON iptv_positions(updated_at DESC);
+
+      -- migrazioni "idempotenti" nel caso le tabelle esistano già
+      ALTER TABLE iptv_watch_events
         ADD COLUMN IF NOT EXISTS media_type TEXT,
         ADD COLUMN IF NOT EXISTS season INTEGER,
         ADD COLUMN IF NOT EXISTS episode INTEGER;
 
-      CREATE INDEX IF NOT EXISTS idx_iptv_positions_updated
-        ON iptv_positions(updated_at DESC);
+      ALTER TABLE iptv_positions
+        ADD COLUMN IF NOT EXISTS media_type TEXT,
+        ADD COLUMN IF NOT EXISTS season INTEGER,
+        ADD COLUMN IF NOT EXISTS episode INTEGER;
     `);
     console.log('[db] iptv tables ensured');
   } catch (e) {
     console.error('[db] ensure iptv tables failed', e);
   }
 })();
+
+
+
 function isTransientDbError(err) {
   if (!err) return false;
   const code = err.code || err.name || '';
@@ -145,6 +166,7 @@ app.get("/__db", async (req, res) => {
 // Save IPTV player events and update last known position
 // Save IPTV player events and update last known position
 // Save IPTV player events and update last known position
+// Save IPTV player events and update last known position (con protezione da reset a 0)
 app.post("/iptv/event", authRequired, async (req, res) => {
   try {
     // Accettiamo sia {type:'PLAYER_EVENT', data:{...}} che payload "flat"
@@ -154,7 +176,11 @@ app.post("/iptv/event", authRequired, async (req, res) => {
         ? body.data
         : body.data || body;
 
-    const {
+    if (!data) {
+      return res.status(400).json({ error: "missing body" });
+    }
+
+    let {
       event,
       currentTime,
       duration,
@@ -162,82 +188,153 @@ app.post("/iptv/event", authRequired, async (req, res) => {
       media_type,
       season,
       episode
-    } = data || {};
+    } = data;
 
     if (!event || !video_id) {
-      return res.status(400).json({ error: "invalid payload", received: data });
+      return res.status(400).json({ error: "missing event or video_id", received: data });
     }
 
+    const userId = req.user.id;
     const provider_video_id = String(video_id);
 
-    // normalizziamo i tempi ma NON facciamo 400 se non sono numeri
-    const tNum = Number(currentTime);
-    const dNum = Number(duration);
+    // ---- tempi: accetto anche campi alternativi t/d ----
+    const tRaw = currentTime != null ? Number(currentTime) : Number(data.t);
+    const dRaw = duration    != null ? Number(duration)    : Number(data.d);
 
-    const t = Number.isFinite(tNum) && tNum >= 0 ? tNum : 0;
-    const d = Number.isFinite(dNum) && dNum >= 0 ? dNum : 0;
+    const hasTIncoming = Number.isFinite(tRaw) && tRaw >= 0;
+    const hasDIncoming = Number.isFinite(dRaw) && dRaw >= 0;
 
-    const userId = req.user.id;
+    // ---- meta: media_type / season / episode ----
+    media_type = media_type || data.mediaType || null;
 
-    // parse season/episode se presenti
-    const seasonNumber = season != null ? Number(season) : null;
-    const episodeNumber = episode != null ? Number(episode) : null;
+    const seasonRaw  = season  != null ? Number(season)  : Number(data.season);
+    const episodeRaw = episode != null ? Number(episode) : Number(data.episode);
 
-    const seasonVal = Number.isFinite(seasonNumber) ? seasonNumber : null;
-    const episodeVal = Number.isFinite(episodeNumber) ? episodeNumber : null;
-    const mediaTypeVal = media_type ? String(media_type) : null;
+    const hasSeason  = Number.isFinite(seasonRaw)  && seasonRaw  > 0;
+    const hasEpisode = Number.isFinite(episodeRaw) && episodeRaw > 0;
 
-    // 1) Log grezzo dell'evento (storico)
-    await pool.query(
-      `INSERT INTO iptv_watch_events (user_id, provider_video_id, event, t, d)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, provider_video_id, String(event), t, d]
+    // leggo eventuale posizione precedente
+    const prevRes = await pool.query(
+      `SELECT t, d, media_type, season, episode
+       FROM iptv_positions
+       WHERE user_id = $1 AND provider_video_id = $2`,
+      [userId, provider_video_id]
     );
+    const prev = prevRes.rows[0] || null;
 
-    // 2) Aggiorna/crea posizione "ultima nota"
-    const updateRes = await pool.query(
-      `UPDATE iptv_positions
-         SET t = $3,
-             d = $4,
-             last_event = $5,
-             media_type = $6,
-             season = $7,
-             episode = $8,
-             updated_at = NOW()
-       WHERE user_id = $1
-         AND provider_video_id = $2`,
+    let t = hasTIncoming ? tRaw : (prev ? Number(prev.t) || 0 : 0);
+    let d = hasDIncoming ? dRaw : (prev ? Number(prev.d) || 0 : 0);
+
+    if (!Number.isFinite(t) || t < 0) t = 0;
+    if (!Number.isFinite(d) || d < 0) d = 0;
+
+    // es. "ended" senza currentTime ma con duration → snap alla fine
+    if (event === "ended" && !hasTIncoming && d > 0) {
+      t = d;
+    }
+
+    // meta finale da salvare (nuova info > vecchia)
+    const finalMediaType =
+      media_type ||
+      (prev ? prev.media_type : null) ||
+      null;
+
+    const finalSeason =
+      hasSeason ? seasonRaw
+      : prev && prev.season != null ? Number(prev.season)
+      : null;
+
+    const finalEpisode =
+      hasEpisode ? episodeRaw
+      : prev && prev.episode != null ? Number(prev.episode)
+      : null;
+
+    // ---- PROTEZIONE: non resettare a 0 dopo hard refresh/autoplay ----
+    let shouldUpdatePosition = true;
+    if (prev) {
+      const prevT = Number(prev.t) || 0;
+      const prevD = Number(prev.d) || 0;
+
+      const isAutoPlayish =
+        event === "play" || event === "pause" || event === "timeupdate";
+
+      const looksLikeResetToZero =
+        prevT > 5 &&          // avevamo già guardato un po'
+        t <= 1 &&             // nuovo evento dice ~0 secondi
+        (prevD === 0 || Math.abs(prevD - d) <= 5); // stessa durata o quasi
+
+      if (isAutoPlayish && looksLikeResetToZero) {
+        shouldUpdatePosition = false;
+      }
+    }
+
+    // ---- 1) Storico eventi (iptv_watch_events) ----
+    // Qui salviamo ANCHE media_type / season / episode
+    await pool.query(
+      `INSERT INTO iptv_watch_events
+         (user_id, provider_video_id, event, t, d, media_type, season, episode)
+       VALUES ($1,      $2,               $3,    $4, $5, $6,         $7,     $8)`,
       [
         userId,
         provider_video_id,
+        String(event),
         t,
         d,
-        String(event),
-        mediaTypeVal,
-        seasonVal,
-        episodeVal
+        finalMediaType,
+        finalSeason,
+        finalEpisode
       ]
     );
 
-    if (updateRes.rowCount === 0) {
-      await pool.query(
-        `INSERT INTO iptv_positions
-           (user_id, provider_video_id, t, d, last_event, media_type, season, episode, updated_at)
-         VALUES
-           ($1,    $2,               $3, $4, $5,         $6,         $7,     $8,      NOW())`,
+    // ---- 2) Posizione ultima nota (iptv_positions) ----
+    if (shouldUpdatePosition) {
+      const updateRes = await pool.query(
+        `UPDATE iptv_positions
+           SET t = $3,
+               d = $4,
+               last_event = $5,
+               media_type = $6,
+               season = $7,
+               episode = $8,
+               updated_at = NOW()
+         WHERE user_id = $1
+           AND provider_video_id = $2`,
         [
           userId,
           provider_video_id,
           t,
           d,
           String(event),
-          mediaTypeVal,
-          seasonVal,
-          episodeVal
+          finalMediaType,
+          finalSeason,
+          finalEpisode
         ]
       );
+
+      if (updateRes.rowCount === 0) {
+        await pool.query(
+          `INSERT INTO iptv_positions
+             (user_id, provider_video_id, t, d, last_event, media_type, season, episode, updated_at)
+           VALUES
+             ($1,    $2,               $3, $4, $5,         $6,         $7,     $8,      NOW())`,
+          [
+            userId,
+            provider_video_id,
+            t,
+            d,
+            String(event),
+            finalMediaType,
+            finalSeason,
+            finalEpisode
+          ]
+        );
+      }
     }
 
-    res.json({ ok: true });
+    res.json({
+      ok: true,
+      ignored_reset: !!(prev && !shouldUpdatePosition)
+    });
   } catch (err) {
     const transient = isTransientDbError(err);
     console.error("iptv/event error", err);
@@ -249,6 +346,7 @@ app.post("/iptv/event", authRequired, async (req, res) => {
     });
   }
 });
+
 
 // Get last known position for a given provider video id (logico)
 app.get("/iptv/position", authRequired, async (req, res) => {
