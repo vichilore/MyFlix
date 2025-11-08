@@ -154,29 +154,22 @@
           />
         </div>
 
-        <div class="iptv-rows">
-          <div class="iptv-recommended" id="iptv-film-recommended-host"></div>
-          <div class="iptv-provider-section" id="iptv-film-provider-host"></div>
-        </div>
+        <div class="iptv-rows"></div>
       </div>
     `;
 
-    const recommendedHost = root.querySelector('#iptv-film-recommended-host');
-    const providerHost = root.querySelector('#iptv-film-provider-host');
+    const rowsHost    = root.querySelector('.iptv-rows');
     const searchInput = root.querySelector('#iptv-film-search');
 
     const loading = document.createElement('div');
     loading.className = 'iptv-loading';
     loading.textContent = 'Caricamento consigliati…';
-    recommendedHost.appendChild(loading);
+    rowsHost.appendChild(loading);
 
     let recommendedItems = [];
-    let providersVisible = false;
 
     function renderHome() {
-      if (!recommendedHost) return;
-
-      recommendedHost.innerHTML = '';
+      rowsHost.innerHTML = '';
 
       if (!recommendedItems.length) {
         rowsHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
@@ -200,17 +193,10 @@
     }
 
     function renderSearchResults(list) {
-      if (!recommendedHost) return;
-
-      recommendedHost.innerHTML = '';
-
-      if (providerHost) {
-        providerHost.style.display = 'none';
-        providersVisible = false;
-      }
+      rowsHost.innerHTML = '';
 
       if (!list.length) {
-        recommendedHost.innerHTML = `<p class="iptv-empty">Nessun film trovato per questa ricerca.</p>`;
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film trovato per questa ricerca.</p>`;
         return;
       }
 
@@ -224,7 +210,7 @@
           location.hash = `#/film/${item.id}`;
         }
       });
-      recommendedHost.appendChild(rowSearch);
+      rowsHost.appendChild(rowSearch);
     }
 
     try {
@@ -233,7 +219,7 @@
       }
 
       const recommended = await window.IPTV.loadRecommendedMovies(2);
-      recommendedHost.innerHTML = '';
+      rowsHost.innerHTML = '';
 
       recommendedItems = (recommended || []).map(mapMovieToCard);
 
@@ -252,7 +238,7 @@
             return;
           }
 
-          recommendedHost.innerHTML = `
+          rowsHost.innerHTML = `
             <div class="iptv-loading">Ricerca in corso…</div>
           `;
 
@@ -266,26 +252,15 @@
               console.error('[IPTV] errore search TMDB', err);
               if (searchId !== lastSearchId) return;
 
-              recommendedHost.innerHTML = `
+              rowsHost.innerHTML = `
                 <p class="iptv-empty">Errore durante la ricerca.</p>
               `;
             });
         });
       }
-
-      if (!providersVisible && providerHost) {
-        ensureProviderCarousels(providerHost, 'movie');
-        providersVisible = true;
-      }
     } catch (e) {
       console.error('[IPTV] errore lista Film', e);
-      if (recommendedHost) {
-        recommendedHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento dei Film.</p>`;
-      }
-      if (providerHost) {
-        ensureProviderCarousels(providerHost, 'movie');
-        providersVisible = true;
-      }
+      rowsHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento dei Film.</p>`;
     }
   }
 
@@ -309,29 +284,22 @@
           />
         </div>
 
-        <div class="iptv-rows">
-          <div class="iptv-recommended" id="iptv-serie-recommended-host"></div>
-          <div class="iptv-provider-section" id="iptv-serie-provider-host"></div>
-        </div>
+        <div class="iptv-rows"></div>
       </div>
     `;
 
-    const recommendedHost = root.querySelector('#iptv-serie-recommended-host');
-    const providerHost = root.querySelector('#iptv-serie-provider-host');
+    const rowsHost    = root.querySelector('.iptv-rows');
     const searchInput = root.querySelector('#iptv-serie-search');
 
     const loading = document.createElement('div');
     loading.className = 'iptv-loading';
     loading.textContent = 'Caricamento serie consigliate…';
-    recommendedHost.appendChild(loading);
+    rowsHost.appendChild(loading);
 
     let recommendedItems = [];
-    let providersVisible = false;
 
     function renderHome() {
-      if (!recommendedHost) return;
-
-      recommendedHost.innerHTML = '';
+      rowsHost.innerHTML = '';
 
       if (!recommendedItems.length) {
         rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
@@ -355,17 +323,10 @@
     }
 
     function renderSearchResults(list) {
-      if (!recommendedHost) return;
-
-      recommendedHost.innerHTML = '';
-
-      if (providerHost) {
-        providerHost.style.display = 'none';
-        providersVisible = false;
-      }
+      rowsHost.innerHTML = '';
 
       if (!list.length) {
-        recommendedHost.innerHTML = `<p class="iptv-empty">Nessuna serie trovata per questa ricerca.</p>`;
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie trovata per questa ricerca.</p>`;
         return;
       }
 
@@ -379,7 +340,7 @@
           location.hash = `#/serie/${item.id}`;
         }
       });
-      recommendedHost.appendChild(rowSearch);
+      rowsHost.appendChild(rowSearch);
     }
 
     try {
@@ -390,7 +351,7 @@
       }
 
       const recommended = await window.IPTV.loadRecommendedSeries(2);
-      recommendedHost.innerHTML = '';
+      rowsHost.innerHTML = '';
 
       recommendedItems = (recommended || []).map(mapSerieToCard);
 
@@ -409,7 +370,7 @@
             return;
           }
 
-          recommendedHost.innerHTML = `
+          rowsHost.innerHTML = `
             <div class="iptv-loading">Ricerca serie in corso…</div>
           `;
 
@@ -423,26 +384,15 @@
               console.error('[IPTV] errore search serie TMDB', err);
               if (searchId !== lastSearchId) return;
 
-              recommendedHost.innerHTML = `
+              rowsHost.innerHTML = `
                 <p class="iptv-empty">Errore durante la ricerca.</p>
               `;
             });
         });
       }
-
-      if (!providersVisible && providerHost) {
-        ensureProviderCarousels(providerHost, 'tv');
-        providersVisible = true;
-      }
     } catch (e) {
       console.error('[IPTV] errore lista Serie', e);
-      if (recommendedHost) {
-        recommendedHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento delle Serie TV.</p>`;
-      }
-      if (providerHost) {
-        ensureProviderCarousels(providerHost, 'tv');
-        providersVisible = true;
-      }
+      rowsHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento delle Serie TV.</p>`;
     }
   }
 
