@@ -34,14 +34,13 @@ body::before{
 
 /* snap spacer */
 .snap-dock{ position:sticky; top:0; height:calc(var(--dock-h) + var(--dock-gap)); pointer-events:none; z-index:1; }
-section,.row,#homeCarousels,#homeProviders{ scroll-margin-top:calc(var(--dock-h) + var(--dock-gap)); }
+section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-gap)); }
 
 /* layout */
 .app{ width:100vw; display:flex; flex-direction:column; min-height:100vh; }
 #home,#watch{ flex:1 0 auto; width:100%; }
 
-.container, #homeCarousels, #homeProviders{ width:min(96vw, 1480px); margin-inline:auto; padding-inline:16px; }
-.home-provider{ margin:28px 0 6px; }
+.container, #homeCarousels{ width:min(96vw, 1480px); margin-inline:auto; padding-inline:16px; }
 .app-footer{ text-align:center; color:var(--muted); font-size:12px; }
 
 
@@ -1517,6 +1516,16 @@ section,.row,#homeCarousels,#homeProviders{ scroll-margin-top:calc(var(--dock-h)
   background: #18181f;
   color: #fff;
   font-size: 0.95rem;
+}
+
+.iptv-provider-section{
+  margin-top: 2rem;
+  display: grid;
+  gap: 2rem;
+}
+
+.iptv-provider-row{
+  width: 100%;
 }
 
 .iptv-search-input::placeholder {
