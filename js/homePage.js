@@ -1,34 +1,5 @@
 // js/homePage.js
 
-const PROVIDER_CAROUSEL_DEFINITIONS = [
-  {
-    title: 'In streaming su Netflix',
-    providerId: 8,
-    targetElementId: 'provider-netflix',
-    size: 'xl',
-    options: { endpoint: '/discover/tv', maxPages: 2 }
-  },
-  {
-    title: 'Film popolari su Prime Video',
-    providerId: 119,
-    targetElementId: 'provider-prime',
-    options: { endpoint: '/discover/movie', maxPages: 2 }
-  },
-  {
-    title: 'Serie da guardare su Disney+',
-    providerId: 337,
-    targetElementId: 'provider-disney',
-    size: 'xl',
-    options: { endpoint: '/discover/tv', maxPages: 2 }
-  },
-  {
-    title: 'NOW: film da non perdere',
-    providerId: 39,
-    targetElementId: 'provider-now',
-    options: { endpoint: '/discover/movie', maxPages: 2 }
-  }
-];
-
 class HomePage {
 
   // -------------------------------------------------
@@ -42,13 +13,9 @@ class HomePage {
   static async render({ query = '', results = null } = {}) {
     const carouselsContainer = UIManager.elements.homeCarousels;
     const statusEl           = UIManager.elements.searchStatus;
-    const providerContainer  = UIManager.elements.homeProviders;
-    const providerDefs       = HomePage.getProviderCarouselDefinitions();
-    let providerPromise = Promise.resolve();
 
     // pulisco i caroselli SEMPRE
     carouselsContainer.innerHTML = '';
-    HomePage.resetProviderSections(providerDefs, { hidden: Boolean(query) });
 
     // ---------- MODALITÀ RICERCA ----------
     if (query) {
@@ -69,11 +36,6 @@ class HomePage {
     } else {
       statusEl.style.display = 'none';
       statusEl.textContent = '';
-      HomePage.showProviderPlaceholders(providerDefs);
-      providerPromise = HomePage.hydrateProviderCarousels(providerDefs);
-      if (providerContainer) {
-        providerContainer.style.display = '';
-      }
     }
 
     // ---------- 1. CONTINUA A GUARDARE (carosello unico) ----------
@@ -132,7 +94,8 @@ class HomePage {
         return true;
       });
     }
-if (resumeItems.length) {
+
+    if (resumeItems.length) {
       const rowResume = Carousel.create({
         id: 'row-resume',
         title: 'Riprendi',
@@ -200,120 +163,6 @@ if (resumeItems.length) {
       items: subIta
     });
     if (rowSub) carouselsContainer.appendChild(rowSub);
-
-    await providerPromise;
-  }
-
-  static getProviderCarouselDefinitions() {
-    return PROVIDER_CAROUSEL_DEFINITIONS;
-  }
-
-  static resetProviderSections(definitions, { hidden = false } = {}) {
-    const host = UIManager.elements.homeProviders;
-    if (host) {
-      host.style.display = hidden ? 'none' : '';
-    }
-
-    if (!Array.isArray(definitions)) {
-      return;
-    }
-
-    for (const def of definitions) {
-      if (!def || !def.targetElementId) continue;
-      const section = document.getElementById(def.targetElementId);
-      if (!section) continue;
-      section.innerHTML = '';
-      if (hidden) {
-        section.dataset.state = 'hidden';
-      } else {
-        section.removeAttribute('data-state');
-      }
-    }
-  }
-
-  static showProviderPlaceholders(definitions) {
-    if (!Array.isArray(definitions) || !definitions.length) {
-      return;
-    }
-
-    for (const def of definitions) {
-      Carousel.renderCarousel(def.targetElementId, {
-        id: `${def.targetElementId}-row`,
-        title: def.title,
-        state: 'loading'
-      });
-    }
-  }
-
-  static async hydrateProviderCarousels(definitions) {
-    if (!Array.isArray(definitions) || !definitions.length) {
-      return;
-    }
-
-    await Promise.all(definitions.map(def => HomePage.renderProviderCarousel(def)));
-  }
-
-  static async renderProviderCarousel(definition) {
-    if (!definition || !definition.targetElementId) {
-      return;
-    }
-
-    const host = document.getElementById(definition.targetElementId);
-    if (!host) {
-      return;
-    }
-
-    try {
-      const rawItems = await API.fetchProviderTop(definition.providerId, definition.options || {});
-      const limit = Number.isFinite(definition.limit) ? definition.limit : undefined;
-      const items = Array.isArray(rawItems)
-        ? rawItems.slice(0, limit || rawItems.length)
-        : [];
-
-      if (!items.length) {
-        Carousel.renderCarousel(host, {
-          id: `${definition.targetElementId}-row`,
-          title: definition.title,
-          state: 'empty'
-        });
-        return;
-      }
-
-      Carousel.renderCarousel(host, {
-        id: `${definition.targetElementId}-row`,
-        title: definition.title,
-        items,
-        size: definition.size || 'default',
-        onClick: definition.onClick || HomePage.navigateToProviderItem
-      });
-    } catch (error) {
-      console.error(`[HomePage] Errore caricamento provider ${definition.providerId}`, error);
-      Carousel.renderCarousel(host, {
-        id: `${definition.targetElementId}-row`,
-        title: definition.title,
-        state: 'error',
-        errorMessage: definition.errorMessage || 'Contenuti non disponibili al momento.'
-      });
-    }
-  }
-
-  static navigateToProviderItem(item) {
-    if (!item || item.id == null) {
-      return;
-    }
-
-    const kind = (item.kind || item.mediaType || item.type || '').toLowerCase();
-    if (kind === 'tv' || kind === 'serie') {
-      location.hash = `#/serie/${item.id}`;
-      return;
-    }
-
-    if (kind === 'movie' || kind === 'film') {
-      location.hash = `#/film/${item.id}`;
-      return;
-    }
-
-    location.hash = `#/film/${item.id}`;
   }
 
   // -------------------------------------------------
