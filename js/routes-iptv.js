@@ -461,25 +461,20 @@
         const isImportant  =
           evName === 'pause' || evName === 'ended' || evName === 'seeked';
 
-        // info extra su media / stagione / episodio
-        const mediaType = window.IPTV_CURRENT_MEDIA_TYPE || null;
-        const seasonNum = Number(window.IPTV_CURRENT_SEASON_NUMBER);
-        const episodeNum = Number(window.IPTV_CURRENT_EPISODE_NUMBER);
-
-        const payloadForBackend = {
-          type: 'PLAYER_EVENT',
-          data: {
-            event: evName,
-            currentTime: hasTime ? currentTime : 0,
-            duration:   hasTime ? duration    : 0,
-            video_id: logicalId,           // TMDB id (film o serie)
-            media_type: mediaType,         // 'movie' | 'serie'
-            season: Number.isFinite(seasonNum) && seasonNum > 0 ? seasonNum : null,
-            episode: Number.isFinite(episodeNum) && episodeNum > 0 ? episodeNum : null
-          }
-        };
-
         if (!isTimeupdate || shouldSendTimeupdate(logicalId) || isImportant) {
+          const payloadForBackend = {
+            type: 'PLAYER_EVENT',
+            data: {
+              event: evName,
+              currentTime: hasTime ? currentTime : 0,
+              duration:   hasTime ? duration    : 0,
+              video_id: logicalId, // 👈 ID logico (TMDB)
+              media_type: window.IPTV_CURRENT_MEDIA_TYPE || null,
+              season: window.IPTV_CURRENT_SEASON ?? null,
+              episode: window.IPTV_CURRENT_EPISODE ?? null
+            }
+          };
+
           apiRef.saveIptvEvent(payloadForBackend)
             .catch(() => {
               // errori silenziati, evitiamo rumore
@@ -499,12 +494,6 @@
 
     const root = ensureRoot();
 
-    // ID logico globale (TMDB id)
-    window.IPTV_CURRENT_MEDIA_ID = item && item.id != null
-      ? String(item.id)
-      : '';
-    window.IPTV_CURRENT_MEDIA_TYPE = type || null;
-
     const title   = item.title || item.name || 'Senza titolo';
     const year    = item.year || (item.release_date ? String(item.release_date).slice(0, 4) : '');
     const rating  = item.rating || item.vote_average;
@@ -521,6 +510,7 @@
     let resumeSeconds = 0;
     let initialSrc = item.url || '';
 
+    // ✳️ Film: usiamo /iptv/position per riprendere da dove era rimasto
     if (type === 'film') {
       const base = getVixMovieBaseUrl(item);
 
@@ -537,7 +527,7 @@
           initialSrc = `${base}?startAt=${Math.floor(seconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
         }
       } catch (err) {
-        console.warn('[IPTV] getIptvPosition error', err);
+        console.warn('[IPTV] getIptvPosition film error', err);
       }
     }
 
@@ -611,6 +601,7 @@
 
     const iframe  = root.querySelector('.iptv-player-frame');
 
+    // Bottone "Riprendi da" SOLO per i film
     if (type === 'film' && resumeSeconds > 5 && iframe) {
       const actions = root.querySelector('.iptv-hero-actions');
       if (actions) {
@@ -672,6 +663,12 @@
         return;
       }
 
+      // global per il bridge
+      window.IPTV_CURRENT_MEDIA_ID = String(movie.id);
+      window.IPTV_CURRENT_MEDIA_TYPE = 'movie';
+      window.IPTV_CURRENT_SEASON = null;
+      window.IPTV_CURRENT_EPISODE = null;
+
       if (window.IPTVProgress) {
         window.IPTVProgress.saveMovieProgress(movie);
       }
@@ -721,7 +718,7 @@
         return;
       }
 
-      // --- normalizza stagioni ---
+      // normalizza stagioni
       const normalizedSeasons = Array.isArray(show.seasons)
         ? show.seasons
             .map(season => {
@@ -747,61 +744,62 @@
       const filteredSeasons = normalizedSeasons.filter(season => season.season_number > 0);
       const seasons = filteredSeasons.length ? filteredSeasons : normalizedSeasons;
 
-      let defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
-      let defaultEpisodeNumber = 1;
+      const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
+
+      // --- RIPRESA DA BACKEND (stagione + episodio + secondi) ---
+      let resumeSeason = defaultSeasonNumber;
+      let resumeEpisode = 1;
       let resumeSeconds = 0;
 
-      // --- leggi ultima posizione dal backend per questa serie (id TMDB) ---
       try {
-        const pos = await API.getIptvPosition(String(show.id));
-        const s = Number(pos?.position?.season);
-        const e = Number(pos?.position?.episode);
-        const t = Number(pos?.position?.t ?? 0) || 0;
+        const posResp = await API.getIptvPosition(String(show.id));
+        const p = posResp && posResp.position;
 
-        if (Number.isFinite(s) && s > 0 && seasons.some(ss => ss.season_number === s)) {
-          defaultSeasonNumber = s;
+        if (p) {
+          const tNum = Number(p.t);
+          if (Number.isFinite(tNum) && tNum >= 0) {
+            resumeSeconds = tNum;
+          }
+
+          const sNum = Number(p.season);
+          if (Number.isFinite(sNum) && sNum > 0) {
+            resumeSeason = sNum;
+          }
+
+          const eNum = Number(p.episode);
+          if (Number.isFinite(eNum) && eNum > 0) {
+            resumeEpisode = eNum;
+          }
         }
-        if (Number.isFinite(e) && e > 0) {
-          defaultEpisodeNumber = e;
-        }
-        resumeSeconds = t;
       } catch (err) {
         console.warn('[IPTV] getIptvPosition serie error', err);
       }
 
-      // set globali per il bridge
-      window.IPTV_CURRENT_MEDIA_ID = String(show.id);
-      window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
-      window.IPTV_CURRENT_SEASON_NUMBER = defaultSeasonNumber;
-      window.IPTV_CURRENT_EPISODE_NUMBER = defaultEpisodeNumber;
-
-      // URL player iniziale: stagione/episodio correnti
-      const baseTvUrl = `https://vixsrc.to/tv/${show.id}/${defaultSeasonNumber}/${defaultEpisodeNumber}`;
-
-      let urlParams = `?lang=${VIX_LANG}&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
-
-      // se abbiamo un resume "vero", facciamo partire da lì e possiamo anche voler autoplay
-      if (resumeSeconds > 5) {
-        urlParams += `&startAt=${Math.floor(resumeSeconds)}&autoplay=true`;
-      }
-
+      const baseTvUrl = `https://vixsrc.to/tv/${show.id}/${resumeSeason}/${resumeEpisode}`;
       show = {
         ...show,
         seasons,
-        url: baseTvUrl + urlParams
+        url: `${baseTvUrl}?startAt=${Math.floor(resumeSeconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`
       };
 
+      // global per il bridge
+      window.IPTV_CURRENT_MEDIA_ID = String(show.id);
+      window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+      window.IPTV_CURRENT_SEASON = resumeSeason;
+      window.IPTV_CURRENT_EPISODE = resumeEpisode;
+
       if (window.IPTVProgress) {
-        // mantieni anche progress locale, se lo usi per "continua a guardare"
-        window.IPTVProgress.saveEpisodeProgress(show, defaultSeasonNumber, defaultEpisodeNumber);
+        window.IPTVProgress.saveEpisodeProgress(show, resumeSeason, resumeEpisode);
       }
 
+      // Render base (hero + player)
       renderPlayerPage({ type: 'serie', item: show });
 
       const container = root.querySelector('.iptv-player-page .container');
       const iframe    = root.querySelector('.iptv-player-frame');
       if (!container || !iframe) return;
 
+      // --- Sezione episodi sotto il player ---
       const episodesSection = document.createElement('section');
       episodesSection.className = 'iptv-episodes-section';
       episodesSection.innerHTML = `
@@ -851,8 +849,10 @@
         currentSeasonLabel.textContent = label;
       };
 
-      let currentSeasonNumber = defaultSeasonNumber;
+      let currentSeasonNumber = resumeSeason;
       let seasonRequestId = 0;
+      let resumeSeasonNumber = resumeSeason;
+      let resumeEpisodeNumber = resumeEpisode;
 
       episodesSection.classList.toggle('no-seasons', seasons.length === 0);
 
@@ -931,16 +931,21 @@
 
             itemBtn.addEventListener('click', () => {
               const baseUrl = `https://vixsrc.to/tv/${show.id}/${targetSeasonNumber}/${episodeNumber}`;
-              // quando l'utente cambia episodio manualmente, non forzo startAt
-              const url = `${baseUrl}?lang=${VIX_LANG}&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
+              const url = `${baseUrl}?lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
               iframe.src = url;
+
+              // aggiorna global per il bridge
+              window.IPTV_CURRENT_MEDIA_ID = String(show.id);
+              window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+              window.IPTV_CURRENT_SEASON = targetSeasonNumber;
+              window.IPTV_CURRENT_EPISODE = episodeNumber;
+
+              resumeSeasonNumber = targetSeasonNumber;
+              resumeEpisodeNumber = episodeNumber;
 
               if (window.IPTVProgress) {
                 window.IPTVProgress.saveEpisodeProgress(show, targetSeasonNumber, episodeNumber);
               }
-
-              window.IPTV_CURRENT_SEASON_NUMBER = targetSeasonNumber;
-              window.IPTV_CURRENT_EPISODE_NUMBER = episodeNumber;
 
               listHost
                 .querySelectorAll('.iptv-episode-item')
@@ -954,26 +959,24 @@
           listHost.innerHTML = '';
           listHost.appendChild(fragment);
 
-          const firstButton = listHost.querySelector('.iptv-episode-item');
-
-          // se questa è la stagione su cui abbiamo il resume, evidenzia quell'episodio
-          let buttonToActivate = null;
-          if (targetSeasonNumber === defaultSeasonNumber && defaultEpisodeNumber) {
-            buttonToActivate = listHost.querySelector(
-              `.iptv-episode-item[data-episode="${defaultEpisodeNumber}"]`
-            );
+          // Marca l'episodio "riprendi" se è questa stagione, altrimenti il primo
+          let activeSet = false;
+          if (targetSeasonNumber === resumeSeasonNumber) {
+            listHost.querySelectorAll('.iptv-episode-item').forEach(btn => {
+              if (activeSet) return;
+              const epNum = Number(btn.dataset.episode);
+              if (epNum === resumeEpisodeNumber) {
+                btn.classList.add('active');
+                activeSet = true;
+              }
+            });
           }
 
-          if (!buttonToActivate) {
-            buttonToActivate = firstButton;
-          }
-
-          if (buttonToActivate) {
-            buttonToActivate.classList.add('active');
-            const epNum = Number(buttonToActivate.dataset.episode);
-            window.IPTV_CURRENT_SEASON_NUMBER = targetSeasonNumber;
-            window.IPTV_CURRENT_EPISODE_NUMBER =
-              Number.isFinite(epNum) && epNum > 0 ? epNum : null;
+          if (!activeSet) {
+            const firstButton = listHost.querySelector('.iptv-episode-item');
+            if (firstButton) {
+              firstButton.classList.add('active');
+            }
           }
 
           if (scrollToTop) {
