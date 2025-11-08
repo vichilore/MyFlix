@@ -4,7 +4,9 @@
 const API = (() => {
 
     const FALLBACK_URL = "https://itanime-api.onrender.com";
-    
+    const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+    const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
+
   // Invece di fissare BASE_URL una volta sola, lo calcoliamo ogni volta.
   function getBaseUrl() {
     if (window.CONFIG && window.CONFIG.API_BASE_URL) {
@@ -205,6 +207,152 @@ const API = (() => {
     return authedRequest("GET", "/iptv/resume?limit=" + encodeURIComponent(limit));
   }
 
+  function getTmdbConfig() {
+    const cfg = window.CONFIG || {};
+    const providers = cfg.TMDB_PROVIDERS || {};
+    const defaults = cfg.TMDB_PROVIDER_DEFAULT_PARAMS || {};
+    const token = cfg.TMDB_V4_TOKEN;
+    if (!token) {
+      throw new Error("TMDB_V4_TOKEN non configurato");
+    }
+    return { providers, defaults, token };
+  }
+
+  async function tmdbFetch(path, params = {}) {
+    const { token } = getTmdbConfig();
+    const url = new URL(TMDB_BASE_URL + path);
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.set(key, value);
+      }
+    }
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json;charset=utf-8"
+      }
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`TMDB HTTP ${res.status} ${text}`.trim());
+    }
+
+    return res.json();
+  }
+
+  function normalizeProviderItem(item, { fallbackLang = "IT" } = {}) {
+    if (!item) return null;
+
+    const title = item.title
+      || item.name
+      || item.original_title
+      || item.original_name
+      || "Senza titolo";
+
+    const release = item.release_date || item.first_air_date || "";
+    const year = release ? release.slice(0, 4) : "";
+    const posterPath = item.poster_path || "";
+    const backdropPath = item.backdrop_path || "";
+    const kind = (item.media_type)
+      ? item.media_type.toLowerCase()
+      : item.first_air_date ? "tv" : "movie";
+
+    const language = (item.original_language || fallbackLang || "IT").toUpperCase();
+
+    return {
+      id: item.id,
+      title,
+      image: posterPath
+        ? `${TMDB_IMAGE_BASE}/w342${posterPath}`
+        : backdropPath
+          ? `${TMDB_IMAGE_BASE}/w342${backdropPath}`
+          : "",
+      backdrop: backdropPath
+        ? `${TMDB_IMAGE_BASE}/w780${backdropPath}`
+        : posterPath
+          ? `${TMDB_IMAGE_BASE}/w780${posterPath}`
+          : "",
+      lang: language,
+      overview: item.overview || "",
+      rating: item.vote_average || 0,
+      year,
+      kind
+    };
+  }
+
+  async function fetchProviderTop(providerId, options = {}) {
+    const providerKey = String(providerId);
+    const { providers, defaults } = getTmdbConfig();
+
+    const config = providers[providerKey];
+    if (!config) {
+      throw new Error(`Configurazione TMDB mancante per provider ${providerKey}`);
+    }
+
+    const {
+      endpoint: configEndpoint,
+      params: configParams = {},
+      maxPages: configMaxPages
+    } = config;
+
+    const endpoint = options.endpoint || configEndpoint || "/discover/tv";
+    const maxPages = options.maxPages || configMaxPages || 2;
+
+    const params = {
+      ...defaults,
+      ...configParams,
+      ...options.params,
+      with_watch_providers: options.params?.with_watch_providers || config.providerId || providerKey
+    };
+
+    if (Array.isArray(params.with_watch_providers)) {
+      params.with_watch_providers = params.with_watch_providers.join("|");
+    } else if (params.with_watch_providers != null) {
+      params.with_watch_providers = String(params.with_watch_providers);
+    }
+
+    const fallbackLang = (() => {
+      if (params.watch_region && typeof params.watch_region === "string") {
+        return params.watch_region.toUpperCase();
+      }
+      if (defaults && typeof defaults.language === "string") {
+        const parts = defaults.language.split("-");
+        return (parts.pop() || parts[0] || "IT").toUpperCase();
+      }
+      return "IT";
+    })();
+
+    const allResults = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const data = await tmdbFetch(endpoint, { ...params, page });
+      if (!data || !Array.isArray(data.results) || !data.results.length) {
+        break;
+      }
+      allResults.push(...data.results);
+      if (page >= (data.total_pages || 0)) {
+        break;
+      }
+    }
+
+    const deduped = [];
+    const seen = new Set();
+    for (const result of allResults) {
+      if (!result || result.id == null) continue;
+      const id = String(result.id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const mapped = normalizeProviderItem(result, { fallbackLang });
+      if (mapped) {
+        deduped.push(mapped);
+      }
+    }
+
+    return deduped;
+  }
+
   return {
     signup,
     login,
@@ -217,6 +365,7 @@ const API = (() => {
     getProgress,
     saveIptvEvent,
     getIptvPosition,
-    getIptvResume
+    getIptvResume,
+    fetchProviderTop
   };
 })();

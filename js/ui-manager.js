@@ -11,6 +11,7 @@ class UIManager {
     watch: $('#watch'),
     allGrid: $('#allGrid'),
     homeCarousels: $('#homeCarousels'),
+    homeProviders: $('#homeProviders'),
     searchStatus: $('#searchStatus'),
     searchInput: $('#searchInput'),
     searchClear: $('#searchClear'),
