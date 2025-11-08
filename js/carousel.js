@@ -117,10 +117,71 @@ class Carousel {
     img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600">
         <rect width="100%" height="100%" fill="#131318"/>
-        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
               fill="#fff" font-family="Arial" font-size="24">${title}</text>
       </svg>`
     );
+  }
+
+  static resolveHost(target) {
+    if (!target) return null;
+    if (typeof target === 'string') {
+      return document.getElementById(target);
+    }
+    if (target instanceof HTMLElement) {
+      return target;
+    }
+    return null;
+  }
+
+  static createStateRow({ id, title, message, spinner = false }) {
+    const row = document.createElement('div');
+    row.className = 'row row--state';
+    row.id = `${id}-state`;
+    row.innerHTML = `
+      <div class="row-head">
+        <div class="row-title">${title || ''}</div>
+      </div>
+      <div class="row-status">
+        ${spinner ? '<span class="row-spinner" aria-hidden="true"></span>' : ''}
+        <span>${message}</span>
+      </div>
+    `;
+    return row;
+  }
+
+  static renderCarousel(target, { id, title, items = [], size = 'default', showProgress = false, onClick, state = 'ready', errorMessage } = {}) {
+    const host = this.resolveHost(target);
+    if (!host) {
+      return;
+    }
+
+    const rowId = id || (typeof target === 'string' ? target : host.id || 'carousel');
+    host.innerHTML = '';
+
+    if (state === 'loading') {
+      host.dataset.state = 'loading';
+      host.appendChild(this.createStateRow({ id: rowId, title, message: 'Caricamento…', spinner: true }));
+      return;
+    }
+
+    if (state === 'error') {
+      host.dataset.state = 'error';
+      host.appendChild(this.createStateRow({ id: rowId, title, message: errorMessage || 'Impossibile caricare i contenuti.' }));
+      return;
+    }
+
+    if (!items || !items.length) {
+      host.dataset.state = 'empty';
+      host.appendChild(this.createStateRow({ id: rowId, title, message: 'Nessun contenuto disponibile.' }));
+      return;
+    }
+
+    host.dataset.state = 'ready';
+    const row = this.create({ id: rowId, title, items, size, showProgress, onClick });
+    if (row) {
+      host.appendChild(row);
+    }
   }
 
   static setupControls(row, track, id, size) {
