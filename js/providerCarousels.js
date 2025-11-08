@@ -20,14 +20,14 @@
         providerId: 119,
         size: 'xl',
         fallbackRoute: 'film',
-        options: { endpoint: '/discover/movie', maxPages: 5 }
+        options: { endpoint: '/discover/movie', maxPages: 2 }
       },
       {
         id: 'provider-now',
         title: 'NOW: film da non perdere',
         providerId: 39,
         fallbackRoute: 'film',
-        options: { endpoint: '/discover/movie', maxPages: 5 }
+        options: { endpoint: '/discover/movie', maxPages: 2 }
       }
     ],
     tv: [
@@ -37,7 +37,7 @@
         providerId: 8,
         size: 'xl',
         fallbackRoute: 'serie',
-        options: { endpoint: '/discover/tv', maxPages: 5 }
+        options: { endpoint: '/discover/tv', maxPages: 2 }
       },
       {
         id: 'provider-disney',
@@ -45,10 +45,20 @@
         providerId: 337,
         size: 'xl',
         fallbackRoute: 'serie',
-        options: { endpoint: '/discover/tv', maxPages: 5 }
+        options: { endpoint: '/discover/tv', maxPages: 2 }
       }
     ]
   };
+
+  function getApi() {
+    if (typeof window !== 'undefined' && window.API) {
+      return window.API;
+    }
+    if (typeof API !== 'undefined') {
+      return API;
+    }
+    return null;
+  }
 
   function resolveType(type) {
     if (!type) return null;
@@ -97,7 +107,8 @@
   }
 
   async function renderDefinition(definition, host, options = {}) {
-    if (!definition || !host || !window.Carousel || !window.API) {
+    const carouselLib = typeof window !== 'undefined' ? window.Carousel : null;
+    if (!definition || !host || !carouselLib) {
       return;
     }
 
@@ -107,14 +118,25 @@
       ? options.onClick
       : (item) => navigateToItem(item, fallbackRoute);
 
-    window.Carousel.renderCarousel(host, {
+    const api = getApi();
+    if (!api || typeof api.fetchProviderTop !== 'function') {
+      carouselLib.renderCarousel(host, {
+        id: rowId,
+        title: definition.title,
+        state: 'error',
+        errorMessage: 'Servizio non disponibile al momento.'
+      });
+      return;
+    }
+
+    carouselLib.renderCarousel(host, {
       id: rowId,
       title: definition.title,
       state: 'loading'
     });
 
     try {
-      const rawItems = await window.API.fetchProviderTop(
+      const rawItems = await api.fetchProviderTop(
         definition.providerId,
         definition.options || {}
       );
@@ -124,7 +146,7 @@
         : [];
 
       if (!items.length) {
-        window.Carousel.renderCarousel(host, {
+        carouselLib.renderCarousel(host, {
           id: rowId,
           title: definition.title,
           state: 'empty'
@@ -132,7 +154,7 @@
         return;
       }
 
-      window.Carousel.renderCarousel(host, {
+      carouselLib.renderCarousel(host, {
         id: rowId,
         title: definition.title,
         items,
@@ -141,7 +163,7 @@
       });
     } catch (error) {
       console.error(`[ProviderCarousels] Errore provider ${definition.providerId}`, error);
-      window.Carousel.renderCarousel(host, {
+      carouselLib.renderCarousel(host, {
         id: rowId,
         title: definition.title,
         state: 'error',

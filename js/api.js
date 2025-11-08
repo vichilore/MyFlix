@@ -369,3 +369,7 @@ const API = (() => {
     fetchProviderTop
   };
 })();
+
+if (typeof window !== 'undefined') {
+  window.API = API;
+}

@@ -116,22 +116,29 @@
     };
   }
 
-  // carousels da provider esterni (se presenti)
-  function appendProviderCarousels(host, type) {
-    if (!host || !window.ProviderCarousels ||
+  function ensureProviderCarousels(container, type) {
+    if (!container || !window.ProviderCarousels ||
         typeof window.ProviderCarousels.renderGroup !== 'function') {
       return;
     }
 
-    const section = document.createElement('div');
-    section.className = 'iptv-provider-section';
-    host.appendChild(section);
+    const alreadyRendered = container.dataset.providersRendered === 'true';
+    if (alreadyRendered) {
+      container.style.display = '';
+      return;
+    }
+
+    container.innerHTML = '';
+    container.style.display = '';
+    container.dataset.providersRendered = 'loading';
 
     const fallbackRoute = type === 'tv' ? 'serie' : 'film';
 
-    window.ProviderCarousels.renderGroup(type, section, {
+    window.ProviderCarousels.renderGroup(type, container, {
       hostClass: 'iptv-provider-row',
       fallbackRoute
+    }).finally(() => {
+      container.dataset.providersRendered = 'true';
     });
   }
 
@@ -163,8 +170,8 @@
     `;
 
     const recommendedHost = root.querySelector('#iptv-film-recommended-host');
-    const providerHost    = root.querySelector('#iptv-film-provider-host');
-    const searchInput     = root.querySelector('#iptv-film-search');
+    const providerHost = root.querySelector('#iptv-film-provider-host');
+    const searchInput = root.querySelector('#iptv-film-search');
 
     const loading = document.createElement('div');
     loading.className = 'iptv-loading';
@@ -173,15 +180,6 @@
 
     let recommendedItems = [];
     let providersVisible = false;
-
-    function ensureProviders() {
-      if (!providerHost) return;
-      providerHost.style.display = '';
-      if (!providersVisible) {
-        appendProviderCarousels(providerHost, 'movie');
-        providersVisible = true;
-      }
-    }
 
     function renderHome() {
       if (!recommendedHost) return;
@@ -206,7 +204,10 @@
         }
       }
 
-      ensureProviders();
+      if (providerHost) {
+        ensureProviderCarousels(providerHost, 'movie');
+        providersVisible = true;
+      }
     }
 
     function renderSearchResults(list) {
@@ -214,9 +215,9 @@
 
       recommendedHost.innerHTML = '';
 
-      // in ricerca nascondo la parte provider
       if (providerHost) {
         providerHost.style.display = 'none';
+        providersVisible = false;
       }
 
       if (!list.length) {
@@ -284,16 +285,17 @@
         });
       }
 
-      // se tutto ok e non in modalità ricerca, mostro sempre provider
-      ensureProviders();
+      if (!providersVisible && providerHost) {
+        ensureProviderCarousels(providerHost, 'movie');
+        providersVisible = true;
+      }
     } catch (e) {
       console.error('[IPTV] errore lista Film', e);
       if (recommendedHost) {
         recommendedHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento dei Film.</p>`;
       }
-      // anche in errore, provo a mostrare comunque i provider
       if (providerHost) {
-        appendProviderCarousels(providerHost, 'movie');
+        ensureProviderCarousels(providerHost, 'movie');
         providersVisible = true;
       }
     }
@@ -327,8 +329,8 @@
     `;
 
     const recommendedHost = root.querySelector('#iptv-serie-recommended-host');
-    const providerHost    = root.querySelector('#iptv-serie-provider-host');
-    const searchInput     = root.querySelector('#iptv-serie-search');
+    const providerHost = root.querySelector('#iptv-serie-provider-host');
+    const searchInput = root.querySelector('#iptv-serie-search');
 
     const loading = document.createElement('div');
     loading.className = 'iptv-loading';
@@ -337,15 +339,6 @@
 
     let recommendedItems = [];
     let providersVisible = false;
-
-    function ensureProviders() {
-      if (!providerHost) return;
-      providerHost.style.display = '';
-      if (!providersVisible) {
-        appendProviderCarousels(providerHost, 'tv');
-        providersVisible = true;
-      }
-    }
 
     function renderHome() {
       if (!recommendedHost) return;
@@ -370,7 +363,10 @@
         }
       }
 
-      ensureProviders();
+      if (providerHost) {
+        ensureProviderCarousels(providerHost, 'tv');
+        providersVisible = true;
+      }
     }
 
     function renderSearchResults(list) {
@@ -380,6 +376,7 @@
 
       if (providerHost) {
         providerHost.style.display = 'none';
+        providersVisible = false;
       }
 
       if (!list.length) {
@@ -448,14 +445,17 @@
         });
       }
 
-      ensureProviders();
+      if (!providersVisible && providerHost) {
+        ensureProviderCarousels(providerHost, 'tv');
+        providersVisible = true;
+      }
     } catch (e) {
       console.error('[IPTV] errore lista Serie', e);
       if (recommendedHost) {
         recommendedHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento delle Serie TV.</p>`;
       }
       if (providerHost) {
-        appendProviderCarousels(providerHost, 'tv');
+        ensureProviderCarousels(providerHost, 'tv');
         providersVisible = true;
       }
     }
