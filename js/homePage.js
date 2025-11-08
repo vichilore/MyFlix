@@ -13,12 +13,14 @@ class HomePage {
   static async render({ query = '', results = null } = {}) {
     const carouselsContainer = UIManager.elements.homeCarousels;
     const statusEl           = UIManager.elements.searchStatus;
+    let highlight            = null;
 
     // pulisco i caroselli SEMPRE
     carouselsContainer.innerHTML = '';
 
     // ---------- MODALITÀ RICERCA ----------
     if (query) {
+      HomePage.renderHero(null);
       statusEl.style.display = 'block';
       statusEl.textContent = (results && results.length)
         ? `Risultati per "${query}" — ${results.length}`
@@ -96,41 +98,14 @@ class HomePage {
     }
 
     if (resumeItems.length) {
+      highlight = resumeItems[0];
       const rowResume = Carousel.create({
         id: 'row-resume',
         title: 'Riprendi',
         items: resumeItems,
         size: 'xl',
         showProgress: true,
-        onClick: (item) => {
-          console.log('[Riprendi click]', item);
-
-          // 1) Se è un ANIME (esiste nel CATALOG) → vai alla pagina watch classica
-          try {
-            if (typeof Catalog !== 'undefined' &&
-                Catalog.findById &&
-                Catalog.findById(item.id)) {
-              UIManager.goWatch(item.id);
-              return;
-            }
-          } catch (e) {
-            console.warn('Errore controllo Catalog:', e);
-          }
-
-          // 2) IPTV (film / serie)
-          const kind = (item.kind || item.mediaType || item.type || '').toLowerCase();
-
-          if (kind === 'tv' || kind === 'serie') {
-            // Serie TV IPTV
-            location.hash = `#/serie/${item.id}`;
-          } else if (kind === 'movie' || kind === 'film') {
-            // Film IPTV
-            location.hash = `#/film/${item.id}`;
-          } else {
-            // fallback: trattalo come film
-            location.hash = `#/film/${item.id}`;
-          }
-        }
+        onClick: (item) => HomePage.navigateToItem(item)
       });
 
       // 👇 forza il router IPTV anche se l'hash era già lo stesso
@@ -147,6 +122,9 @@ class HomePage {
 
     // ---------- 2. DOPPIAGGIO ITA ----------
     const itaAnime = CATALOG.filter(s => /\(ITA\)/i.test(s.title));
+    if (!highlight && itaAnime.length) {
+      highlight = itaAnime[0];
+    }
     const rowITA = Carousel.create({
       id: 'row-ita',
       title: 'Anime doppiati in italiano 🇮🇹',
@@ -157,12 +135,145 @@ class HomePage {
 
     // ---------- 3. SUB ITA ----------
     const subIta = CATALOG.filter(s => /SUB.?ITA/i.test(s.title));
+    if (!highlight && subIta.length) {
+      highlight = subIta[0];
+    }
     const rowSub = Carousel.create({
       id: 'row-sub',
       title: 'Anime SUB-ITA',
       items: subIta
     });
     if (rowSub) carouselsContainer.appendChild(rowSub);
+
+    if (!highlight && Array.isArray(CATALOG) && CATALOG.length) {
+      const randomIndex = Math.floor(Math.random() * CATALOG.length);
+      highlight = CATALOG[randomIndex];
+    }
+
+    HomePage.renderHero(highlight);
+  }
+
+  static navigateToItem(item) {
+    if (!item) return;
+
+    try {
+      if (typeof Catalog !== 'undefined' &&
+          Catalog.findById &&
+          Catalog.findById(item.id)) {
+        UIManager.goWatch(item.id);
+        return;
+      }
+    } catch (e) {
+      console.warn('Errore controllo Catalog:', e);
+    }
+
+    const kind = (item.kind || item.mediaType || item.type || '').toLowerCase();
+
+    if (kind === 'tv' || kind === 'serie') {
+      location.hash = `#/serie/${item.id}`;
+      return;
+    }
+
+    if (kind === 'movie' || kind === 'film') {
+      location.hash = `#/film/${item.id}`;
+      return;
+    }
+
+    if (item.id && typeof UIManager.goWatch === 'function') {
+      UIManager.goWatch(item.id);
+      return;
+    }
+
+    if (item.id) {
+      location.hash = `#/film/${item.id}`;
+    }
+  }
+
+  static renderHero(item) {
+    const {
+      homeHero,
+      heroBackground,
+      heroTitle,
+      heroDescription,
+      heroMeta,
+      heroTag,
+      heroPlay,
+      heroMore
+    } = UIManager.elements;
+
+    if (!homeHero) return;
+
+    if (!item) {
+      homeHero.classList.add('is-collapsed');
+      if (heroPlay) heroPlay.onclick = null;
+      if (heroMore) heroMore.onclick = null;
+      return;
+    }
+
+    homeHero.classList.remove('is-collapsed');
+
+    if (heroBackground) {
+      if (item.image) {
+        heroBackground.style.backgroundImage = `url('${item.image}')`;
+        heroBackground.classList.add('has-image');
+      } else {
+        heroBackground.style.backgroundImage = '';
+        heroBackground.classList.remove('has-image');
+      }
+    }
+
+    if (heroTitle) {
+      heroTitle.textContent = item.title || 'In evidenza';
+    }
+
+    if (heroTag) {
+      const tagText = item.lang ||
+        (item.kind === 'movie' ? 'Film' : item.kind === 'tv' ? 'Serie' : 'Consigliato');
+      if (tagText) {
+        heroTag.textContent = tagText;
+        heroTag.classList.remove('is-hidden');
+      } else {
+        heroTag.classList.add('is-hidden');
+      }
+    }
+
+    if (heroDescription) {
+      const description = item.description || item.overview || item.synopsis || item.subtitle || '';
+      if (description) {
+        heroDescription.textContent = description;
+        heroDescription.classList.remove('is-hidden');
+        heroDescription.classList.remove('is-fallback');
+      } else {
+        heroDescription.textContent = 'Guarda in streaming illimitato su AmiciCari.tv.';
+        heroDescription.classList.remove('is-hidden');
+        heroDescription.classList.add('is-fallback');
+      }
+    }
+
+    if (heroMeta) {
+      const metaParts = [];
+      if (item.year) metaParts.push(item.year);
+      if (item.rating) metaParts.push(`★ ${Number(item.rating).toFixed(1)}`);
+      if (item.kind && !/(anime)/i.test(item.kind)) {
+        metaParts.push(item.kind.toString().toUpperCase());
+      }
+      const metaText = metaParts.join(' • ');
+      if (metaText) {
+        heroMeta.textContent = metaText;
+        heroMeta.classList.remove('is-hidden');
+      } else {
+        heroMeta.textContent = '';
+        heroMeta.classList.add('is-hidden');
+      }
+    }
+
+    if (heroPlay) {
+      heroPlay.onclick = () => HomePage.navigateToItem(item);
+    }
+
+    if (heroMore) {
+      heroMore.onclick = () => HomePage.navigateToItem(item);
+    }
   }
 
   // -------------------------------------------------
