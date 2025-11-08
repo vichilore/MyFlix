@@ -259,6 +259,7 @@
           const searchId = lastSearchId;
 
           if (!q) {
+            // reset → torno a home + provider
             renderHome();
             return;
           }
@@ -476,7 +477,7 @@
     return true;
   }
 
-    function attachIptvEventBridgeOnce() {
+  function attachIptvEventBridgeOnce() {
     if (iptvBridgeAttached) return;
     iptvBridgeAttached = true;
 
@@ -582,7 +583,7 @@
               event: evName,
               currentTime: tSend,
               duration:   dSend,
-              video_id: logicalId,                      // TMDB id
+              video_id: logicalId,                      // TMDB id logico
               media_type: window.IPTV_CURRENT_MEDIA_TYPE || null,
               season: window.IPTV_CURRENT_SEASON ?? null,
               episode: window.IPTV_CURRENT_EPISODE ?? null
@@ -599,7 +600,6 @@
       }
     });
   }
-
 
   // ---------- PLAYER PAGE (hero + iframe) ----------
 
@@ -625,9 +625,7 @@
     let resumeSeconds = 0;
     let initialSrc = item.url || '';
 
-     window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
-
-    // ✳️ Film: usiamo /iptv/position per riprendere da dove era rimasto
+    // Film: usiamo /iptv/position per riprendere da dove era rimasto
     if (type === 'film') {
       const base = getVixMovieBaseUrl(item);
 
@@ -639,6 +637,9 @@
         const pos = await API.getIptvPosition(String(item.id));
         const seconds = Number(pos?.position?.t ?? 0) || 0;
         resumeSeconds = seconds;
+
+        // 👉 qui salviamo il valore precedente per l'anti-reset
+        window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
 
         if (seconds > 5 && base) {
           initialSrc = `${base}?startAt=${Math.floor(seconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
@@ -864,7 +865,7 @@
       const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
 
       // --- RIPRESA DA BACKEND (stagione + episodio + secondi) ---
-      let resumeSeason = defaultSeasonNumber;
+      let resumeSeason  = defaultSeasonNumber;
       let resumeEpisode = 1;
       let resumeSeconds = 0;
 
@@ -878,6 +879,7 @@
             resumeSeconds = tNum;
           }
 
+          // valore usato dall'anti-reset nel bridge
           window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
 
           const sNum = Number(p.season);
@@ -903,7 +905,7 @@
 
       // global per il bridge
       window.IPTV_CURRENT_MEDIA_ID = String(show.id);
-      window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+      window.IPTV_CURRENT_MEDIA_TYPE = 'tv';   // <— coerente con movie/tv
       window.IPTV_CURRENT_SEASON = resumeSeason;
       window.IPTV_CURRENT_EPISODE = resumeEpisode;
 
@@ -968,10 +970,10 @@
         currentSeasonLabel.textContent = label;
       };
 
-      let currentSeasonNumber = resumeSeason;
-      let seasonRequestId = 0;
-      let resumeSeasonNumber = resumeSeason;
-      let resumeEpisodeNumber = resumeEpisode;
+      let currentSeasonNumber  = resumeSeason;
+      let seasonRequestId      = 0;
+      let resumeSeasonNumber   = resumeSeason;
+      let resumeEpisodeNumber  = resumeEpisode;
 
       episodesSection.classList.toggle('no-seasons', seasons.length === 0);
 
@@ -1055,11 +1057,11 @@
 
               // aggiorna global per il bridge
               window.IPTV_CURRENT_MEDIA_ID = String(show.id);
-              window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+              window.IPTV_CURRENT_MEDIA_TYPE = 'tv';
               window.IPTV_CURRENT_SEASON = targetSeasonNumber;
               window.IPTV_CURRENT_EPISODE = episodeNumber;
 
-              resumeSeasonNumber = targetSeasonNumber;
+              resumeSeasonNumber  = targetSeasonNumber;
               resumeEpisodeNumber = episodeNumber;
 
               if (window.IPTVProgress) {
