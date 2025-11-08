@@ -20,14 +20,14 @@
         providerId: 119,
         size: 'xl',
         fallbackRoute: 'film',
-        options: { endpoint: '/discover/movie', maxPages: 2 }
+        options: { endpoint: '/discover/movie', maxPages: 5 }
       },
       {
         id: 'provider-now',
         title: 'NOW: film da non perdere',
         providerId: 39,
         fallbackRoute: 'film',
-        options: { endpoint: '/discover/movie', maxPages: 2 }
+        options: { endpoint: '/discover/movie', maxPages: 5 }
       }
     ],
     tv: [
@@ -37,7 +37,7 @@
         providerId: 8,
         size: 'xl',
         fallbackRoute: 'serie',
-        options: { endpoint: '/discover/tv', maxPages: 2 }
+        options: { endpoint: '/discover/tv', maxPages: 5 }
       },
       {
         id: 'provider-disney',
@@ -45,7 +45,7 @@
         providerId: 337,
         size: 'xl',
         fallbackRoute: 'serie',
-        options: { endpoint: '/discover/tv', maxPages: 2 }
+        options: { endpoint: '/discover/tv', maxPages: 5 }
       }
     ]
   };

@@ -116,15 +116,16 @@
     };
   }
 
-  function appendProviderCarousels(rowsHost, type) {
-    if (!rowsHost || !window.ProviderCarousels ||
+  // carousels da provider esterni (se presenti)
+  function appendProviderCarousels(host, type) {
+    if (!host || !window.ProviderCarousels ||
         typeof window.ProviderCarousels.renderGroup !== 'function') {
       return;
     }
 
     const section = document.createElement('div');
     section.className = 'iptv-provider-section';
-    rowsHost.appendChild(section);
+    host.appendChild(section);
 
     const fallbackRoute = type === 'tv' ? 'serie' : 'film';
 
@@ -162,8 +163,8 @@
     `;
 
     const recommendedHost = root.querySelector('#iptv-film-recommended-host');
-    const providerHost = root.querySelector('#iptv-film-provider-host');
-    const searchInput = root.querySelector('#iptv-film-search');
+    const providerHost    = root.querySelector('#iptv-film-provider-host');
+    const searchInput     = root.querySelector('#iptv-film-search');
 
     const loading = document.createElement('div');
     loading.className = 'iptv-loading';
@@ -173,13 +174,22 @@
     let recommendedItems = [];
     let providersVisible = false;
 
+    function ensureProviders() {
+      if (!providerHost) return;
+      providerHost.style.display = '';
+      if (!providersVisible) {
+        appendProviderCarousels(providerHost, 'movie');
+        providersVisible = true;
+      }
+    }
+
     function renderHome() {
       if (!recommendedHost) return;
 
       recommendedHost.innerHTML = '';
 
       if (!recommendedItems.length) {
-        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
+        recommendedHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
       } else {
         const rowRec = window.Carousel.create({
           id: 'iptv-film-recommended',
@@ -192,11 +202,11 @@
           }
         });
         if (rowRec) {
-          rowsHost.appendChild(rowRec);
+          recommendedHost.appendChild(rowRec);
         }
       }
 
-      appendProviderCarousels(rowsHost, 'movie');
+      ensureProviders();
     }
 
     function renderSearchResults(list) {
@@ -204,9 +214,9 @@
 
       recommendedHost.innerHTML = '';
 
+      // in ricerca nascondo la parte provider
       if (providerHost) {
         providerHost.style.display = 'none';
-        providersVisible = false;
       }
 
       if (!list.length) {
@@ -248,6 +258,7 @@
           const searchId = lastSearchId;
 
           if (!q) {
+            // reset → torno a home + provider
             renderHome();
             return;
           }
@@ -273,17 +284,16 @@
         });
       }
 
-      if (!providersVisible && providerHost) {
-        ensureProviderCarousels(providerHost, 'movie');
-        providersVisible = true;
-      }
+      // se tutto ok e non in modalità ricerca, mostro sempre provider
+      ensureProviders();
     } catch (e) {
       console.error('[IPTV] errore lista Film', e);
       if (recommendedHost) {
         recommendedHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento dei Film.</p>`;
       }
+      // anche in errore, provo a mostrare comunque i provider
       if (providerHost) {
-        ensureProviderCarousels(providerHost, 'movie');
+        appendProviderCarousels(providerHost, 'movie');
         providersVisible = true;
       }
     }
@@ -317,8 +327,8 @@
     `;
 
     const recommendedHost = root.querySelector('#iptv-serie-recommended-host');
-    const providerHost = root.querySelector('#iptv-serie-provider-host');
-    const searchInput = root.querySelector('#iptv-serie-search');
+    const providerHost    = root.querySelector('#iptv-serie-provider-host');
+    const searchInput     = root.querySelector('#iptv-serie-search');
 
     const loading = document.createElement('div');
     loading.className = 'iptv-loading';
@@ -328,13 +338,22 @@
     let recommendedItems = [];
     let providersVisible = false;
 
+    function ensureProviders() {
+      if (!providerHost) return;
+      providerHost.style.display = '';
+      if (!providersVisible) {
+        appendProviderCarousels(providerHost, 'tv');
+        providersVisible = true;
+      }
+    }
+
     function renderHome() {
       if (!recommendedHost) return;
 
       recommendedHost.innerHTML = '';
 
       if (!recommendedItems.length) {
-        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
+        recommendedHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
       } else {
         const rowRec = window.Carousel.create({
           id: 'iptv-serie-recommended',
@@ -347,11 +366,11 @@
           }
         });
         if (rowRec) {
-          rowsHost.appendChild(rowRec);
+          recommendedHost.appendChild(rowRec);
         }
       }
 
-      appendProviderCarousels(rowsHost, 'tv');
+      ensureProviders();
     }
 
     function renderSearchResults(list) {
@@ -361,7 +380,6 @@
 
       if (providerHost) {
         providerHost.style.display = 'none';
-        providersVisible = false;
       }
 
       if (!list.length) {
@@ -430,17 +448,14 @@
         });
       }
 
-      if (!providersVisible && providerHost) {
-        ensureProviderCarousels(providerHost, 'tv');
-        providersVisible = true;
-      }
+      ensureProviders();
     } catch (e) {
       console.error('[IPTV] errore lista Serie', e);
       if (recommendedHost) {
         recommendedHost.innerHTML = `<p class="iptv-empty">Errore nel caricamento delle Serie TV.</p>`;
       }
       if (providerHost) {
-        ensureProviderCarousels(providerHost, 'tv');
+        appendProviderCarousels(providerHost, 'tv');
         providersVisible = true;
       }
     }
@@ -462,7 +477,7 @@
     return true;
   }
 
-    function attachIptvEventBridgeOnce() {
+  function attachIptvEventBridgeOnce() {
     if (iptvBridgeAttached) return;
     iptvBridgeAttached = true;
 
@@ -568,7 +583,7 @@
               event: evName,
               currentTime: tSend,
               duration:   dSend,
-              video_id: logicalId,                      // TMDB id
+              video_id: logicalId,                      // TMDB id logico
               media_type: window.IPTV_CURRENT_MEDIA_TYPE || null,
               season: window.IPTV_CURRENT_SEASON ?? null,
               episode: window.IPTV_CURRENT_EPISODE ?? null
@@ -585,7 +600,6 @@
       }
     });
   }
-
 
   // ---------- PLAYER PAGE (hero + iframe) ----------
 
@@ -611,9 +625,7 @@
     let resumeSeconds = 0;
     let initialSrc = item.url || '';
 
-     window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
-
-    // ✳️ Film: usiamo /iptv/position per riprendere da dove era rimasto
+    // Film: usiamo /iptv/position per riprendere da dove era rimasto
     if (type === 'film') {
       const base = getVixMovieBaseUrl(item);
 
@@ -625,6 +637,9 @@
         const pos = await API.getIptvPosition(String(item.id));
         const seconds = Number(pos?.position?.t ?? 0) || 0;
         resumeSeconds = seconds;
+
+        // 👉 qui salviamo il valore precedente per l'anti-reset
+        window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
 
         if (seconds > 5 && base) {
           initialSrc = `${base}?startAt=${Math.floor(seconds)}&lang=${VIX_LANG}&autoplay=true&primaryColor=${VIX_PRIMARY_COLOR}&secondaryColor=${VIX_SECONDARY_COLOR}`;
@@ -850,7 +865,7 @@
       const defaultSeasonNumber = seasons.length ? seasons[0].season_number : 1;
 
       // --- RIPRESA DA BACKEND (stagione + episodio + secondi) ---
-      let resumeSeason = defaultSeasonNumber;
+      let resumeSeason  = defaultSeasonNumber;
       let resumeEpisode = 1;
       let resumeSeconds = 0;
 
@@ -864,6 +879,7 @@
             resumeSeconds = tNum;
           }
 
+          // valore usato dall'anti-reset nel bridge
           window.IPTV_PREVIOUS_POSITION_T = resumeSeconds;
 
           const sNum = Number(p.season);
@@ -889,7 +905,7 @@
 
       // global per il bridge
       window.IPTV_CURRENT_MEDIA_ID = String(show.id);
-      window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+      window.IPTV_CURRENT_MEDIA_TYPE = 'tv';   // <— coerente con movie/tv
       window.IPTV_CURRENT_SEASON = resumeSeason;
       window.IPTV_CURRENT_EPISODE = resumeEpisode;
 
@@ -954,10 +970,10 @@
         currentSeasonLabel.textContent = label;
       };
 
-      let currentSeasonNumber = resumeSeason;
-      let seasonRequestId = 0;
-      let resumeSeasonNumber = resumeSeason;
-      let resumeEpisodeNumber = resumeEpisode;
+      let currentSeasonNumber  = resumeSeason;
+      let seasonRequestId      = 0;
+      let resumeSeasonNumber   = resumeSeason;
+      let resumeEpisodeNumber  = resumeEpisode;
 
       episodesSection.classList.toggle('no-seasons', seasons.length === 0);
 
@@ -1041,11 +1057,11 @@
 
               // aggiorna global per il bridge
               window.IPTV_CURRENT_MEDIA_ID = String(show.id);
-              window.IPTV_CURRENT_MEDIA_TYPE = 'serie';
+              window.IPTV_CURRENT_MEDIA_TYPE = 'tv';
               window.IPTV_CURRENT_SEASON = targetSeasonNumber;
               window.IPTV_CURRENT_EPISODE = episodeNumber;
 
-              resumeSeasonNumber = targetSeasonNumber;
+              resumeSeasonNumber  = targetSeasonNumber;
               resumeEpisodeNumber = episodeNumber;
 
               if (window.IPTVProgress) {
