@@ -19,20 +19,26 @@ class Carousel {
     track.id = `${id}-track`;
     row.appendChild(track);
 
-    const updateFades = () => {
-      const max = track.scrollWidth - track.clientWidth;
-      row.classList.toggle('has-fade-right', track.scrollLeft < max - 2);
-    };
-
-    track.addEventListener('scroll', updateFades, { passive: true });
-    new ResizeObserver(updateFades).observe(track);
-    requestAnimationFrame(updateFades);
-
     for (const item of items) {
       track.appendChild(this.createCard(item, size, showProgress, onClick));
     }
 
-    this.setupControls(row, track, id, size);
+    const controls = this.setupControls(row, track, id, size);
+
+    if (controls && typeof controls.updateState === 'function') {
+      const updateState = controls.updateState;
+
+      track.addEventListener('scroll', updateState, { passive: true });
+
+      if (typeof ResizeObserver === 'function') {
+        const resizeObserver = new ResizeObserver(updateState);
+        resizeObserver.observe(track);
+        track.__carouselResizeObserver = resizeObserver;
+      }
+
+      requestAnimationFrame(updateState);
+    }
+
     return row;
   }
 
@@ -188,16 +194,45 @@ class Carousel {
     const prev = row.querySelector(`#${id}-prev`);
     const next = row.querySelector(`#${id}-next`);
 
-   // dentro setupControls, sostituisci la funzione step()
     const step = () => {
       const c = track.querySelector('.c-item');
       const w = c ? c.getBoundingClientRect().width : 280;
-      const visible = Math.floor(track.clientWidth / w) || 1;
-      return w * (visible - 0.5); // sfoglia quasi una pagina
+      const visible = Math.floor(track.clientWidth / Math.max(w, 1)) || 1;
+      return w * Math.max(visible - 0.5, 1);
     };
 
-    prev.onclick = () => track.scrollBy({ left: -step(), behavior: 'smooth' });
-    next.onclick = () => track.scrollBy({ left: step(), behavior: 'smooth' });
+    const updateState = () => {
+      const maxScroll = Math.max(0, Math.round(track.scrollWidth - track.clientWidth));
+      const current = Math.round(track.scrollLeft);
+      const atStart = current <= 2;
+      const atEnd = current >= (maxScroll - 2);
+
+      row.classList.toggle('has-fade-left', !atStart && maxScroll > 0);
+      row.classList.toggle('has-fade-right', !atEnd && maxScroll > 0);
+
+      if (prev) prev.disabled = atStart;
+      if (next) next.disabled = atEnd;
+    };
+
+    if (prev) {
+      prev.addEventListener('click', () => {
+        const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+        const target = Math.max(0, Math.min(track.scrollLeft - step(), maxScroll));
+        track.scrollTo({ left: target, behavior: 'smooth' });
+        requestAnimationFrame(updateState);
+      });
+    }
+
+    if (next) {
+      next.addEventListener('click', () => {
+        const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+        const target = Math.max(0, Math.min(track.scrollLeft + step(), maxScroll));
+        track.scrollTo({ left: target, behavior: 'smooth' });
+        requestAnimationFrame(updateState);
+      });
+    }
+
+    return { updateState };
   }
 }
 
