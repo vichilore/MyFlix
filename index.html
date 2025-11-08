@@ -12,12 +12,11 @@
     <!-- ===== TOPBAR FISSA ===== -->
    <!-- ===== TOPBAR FISSA ===== -->
     <header class="topbar">
-      <div class="brand" id="brandLogo">
-        <img src="AMICI-Photoroom.png" alt="AmiciCari Logo" class="logo-img" />
-      </div>
+      <div class="topbar-inner container">
+        <div class="brand" id="brandLogo">
+          <img src="AMICI-Photoroom.png" alt="AmiciCari Logo" class="logo-img" />
+        </div>
 
-      <!-- BOX CENTRALE con il nav dentro -->
-      <div class="topbar-center">
         <nav class="nav-center-box" aria-label="Navigazione principale">
           <ul>
             <li class="active"><a href="#" id="navHomeBtn">Home</a></li>
@@ -26,12 +25,12 @@
             <li><a href="#/serie" id="nav-serie">Serie</a></li>
           </ul>
         </nav>
-      </div>
 
-      <button id="profileBtn" class="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profilo">
-        <img id="profileAvatar" class="profile-avatar" alt="Avatar" />
-        <span id="profileName" class="profile-name">Profilo</span>
-      </button>
+        <button id="profileBtn" class="profile-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Profilo">
+          <img id="profileAvatar" class="profile-avatar" alt="Avatar" />
+          <span id="profileName" class="profile-name">Profilo</span>
+        </button>
+      </div>
     </header>
 
 
@@ -47,12 +46,28 @@
     <!-- ===== CONTENUTO PAGINA ===== -->
     <main class="page" role="main">
       <!-- HOME -->
-      <section id="home">
-        <div class="container">
-          <div id="homeResume"></div>
-          <div id="searchStatus" class="search-status" style="display:none"></div>
+      <section id="home" class="home">
+        <div id="homeHero" class="hero is-collapsed" role="region" aria-live="polite">
+          <div class="hero__media">
+            <div id="heroBackground" class="hero__media-img" role="presentation"></div>
+            <div class="hero__scrim"></div>
+          </div>
+          <div class="hero__content container">
+            <span id="heroTag" class="hero__tag is-hidden"></span>
+            <h1 id="heroTitle" class="hero__title">In evidenza</h1>
+            <p id="heroDescription" class="hero__description is-hidden"></p>
+            <div id="heroMeta" class="hero__meta is-hidden"></div>
+            <div class="hero__actions">
+              <button id="heroPlay" class="btn primary" type="button">Riproduci</button>
+              <button id="heroMore" class="btn ghost" type="button">Dettagli</button>
+            </div>
+          </div>
         </div>
-        <div id="homeCarousels" class="container"></div>
+
+        <div class="home-content container">
+          <div id="searchStatus" class="search-status" style="display:none"></div>
+          <div id="homeCarousels" class="carousel-stack"></div>
+        </div>
       </section>
 
       <!-- TUTTI -->
