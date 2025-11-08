@@ -116,6 +116,24 @@
     };
   }
 
+  function appendProviderCarousels(rowsHost, type) {
+    if (!rowsHost || !window.ProviderCarousels ||
+        typeof window.ProviderCarousels.renderGroup !== 'function') {
+      return;
+    }
+
+    const section = document.createElement('div');
+    section.className = 'iptv-provider-section';
+    rowsHost.appendChild(section);
+
+    const fallbackRoute = type === 'tv' ? 'serie' : 'film';
+
+    window.ProviderCarousels.renderGroup(type, section, {
+      hostClass: 'iptv-provider-row',
+      fallbackRoute
+    });
+  }
+
   // ---------- LISTA FILM ----------
 
   async function renderFilmList() {
@@ -155,20 +173,23 @@
 
       if (!recommendedItems.length) {
         rowsHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
-        return;
+      } else {
+        const rowRec = window.Carousel.create({
+          id: 'iptv-film-recommended',
+          title: 'Consigliati per te',
+          items: recommendedItems,
+          size: 'xl',
+          showProgress: false,
+          onClick: (item) => {
+            location.hash = `#/film/${item.id}`;
+          }
+        });
+        if (rowRec) {
+          rowsHost.appendChild(rowRec);
+        }
       }
 
-      const rowRec = window.Carousel.create({
-        id: 'iptv-film-recommended',
-        title: 'Consigliati per te',
-        items: recommendedItems,
-        size: 'xl',
-        showProgress: false,
-        onClick: (item) => {
-          location.hash = `#/film/${item.id}`;
-        }
-      });
-      rowsHost.appendChild(rowRec);
+      appendProviderCarousels(rowsHost, 'movie');
     }
 
     function renderSearchResults(list) {
@@ -282,20 +303,23 @@
 
       if (!recommendedItems.length) {
         rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
-        return;
+      } else {
+        const rowRec = window.Carousel.create({
+          id: 'iptv-serie-recommended',
+          title: 'Serie consigliate per te',
+          items: recommendedItems,
+          size: 'xl',
+          showProgress: false,
+          onClick: (item) => {
+            location.hash = `#/serie/${item.id}`;
+          }
+        });
+        if (rowRec) {
+          rowsHost.appendChild(rowRec);
+        }
       }
 
-      const rowRec = window.Carousel.create({
-        id: 'iptv-serie-recommended',
-        title: 'Serie consigliate per te',
-        items: recommendedItems,
-        size: 'xl',
-        showProgress: false,
-        onClick: (item) => {
-          location.hash = `#/serie/${item.id}`;
-        }
-      });
-      rowsHost.appendChild(rowRec);
+      appendProviderCarousels(rowsHost, 'tv');
     }
 
     function renderSearchResults(list) {
