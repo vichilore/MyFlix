@@ -116,29 +116,21 @@
     };
   }
 
-  function ensureProviderCarousels(container, type) {
-    if (!container || !window.ProviderCarousels ||
+  function appendProviderCarousels(rowsHost, type) {
+    if (!rowsHost || !window.ProviderCarousels ||
         typeof window.ProviderCarousels.renderGroup !== 'function') {
       return;
     }
 
-    const alreadyRendered = container.dataset.providersRendered === 'true';
-    if (alreadyRendered) {
-      container.style.display = '';
-      return;
-    }
-
-    container.innerHTML = '';
-    container.style.display = '';
-    container.dataset.providersRendered = 'loading';
+    const section = document.createElement('div');
+    section.className = 'iptv-provider-section';
+    rowsHost.appendChild(section);
 
     const fallbackRoute = type === 'tv' ? 'serie' : 'film';
 
-    window.ProviderCarousels.renderGroup(type, container, {
+    window.ProviderCarousels.renderGroup(type, section, {
       hostClass: 'iptv-provider-row',
       fallbackRoute
-    }).finally(() => {
-      container.dataset.providersRendered = 'true';
     });
   }
 
@@ -187,7 +179,7 @@
       recommendedHost.innerHTML = '';
 
       if (!recommendedItems.length) {
-        recommendedHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessun film consigliato trovato.</p>`;
       } else {
         const rowRec = window.Carousel.create({
           id: 'iptv-film-recommended',
@@ -200,14 +192,11 @@
           }
         });
         if (rowRec) {
-          recommendedHost.appendChild(rowRec);
+          rowsHost.appendChild(rowRec);
         }
       }
 
-      if (providerHost) {
-        ensureProviderCarousels(providerHost, 'movie');
-        providersVisible = true;
-      }
+      appendProviderCarousels(rowsHost, 'movie');
     }
 
     function renderSearchResults(list) {
@@ -345,7 +334,7 @@
       recommendedHost.innerHTML = '';
 
       if (!recommendedItems.length) {
-        recommendedHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
+        rowsHost.innerHTML = `<p class="iptv-empty">Nessuna serie consigliata trovata.</p>`;
       } else {
         const rowRec = window.Carousel.create({
           id: 'iptv-serie-recommended',
@@ -358,14 +347,11 @@
           }
         });
         if (rowRec) {
-          recommendedHost.appendChild(rowRec);
+          rowsHost.appendChild(rowRec);
         }
       }
 
-      if (providerHost) {
-        ensureProviderCarousels(providerHost, 'tv');
-        providersVisible = true;
-      }
+      appendProviderCarousels(rowsHost, 'tv');
     }
 
     function renderSearchResults(list) {
