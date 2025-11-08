@@ -557,12 +557,23 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   to{ transform:rotate(360deg); }
 }
 
-/* fade-out destro */
+/* fade-out laterali */
+.row::before,
 .row::after{
-  content:""; position:absolute; top:0; right:0; height:100%; width:80px;
-  pointer-events:none; opacity:0; transition:opacity .2s ease;
-  background: linear-gradient(to left, var(--bg) 0%, rgba(10,10,10,0) 100%);
+  content:"";
+  position:absolute;
+  top:0;
+  height:100%;
+  width:80px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .2s ease;
 }
+
+.row::before{ left:0; background: linear-gradient(to right, var(--bg) 0%, rgba(10,10,10,0) 100%); }
+.row::after{ right:0; background: linear-gradient(to left, var(--bg) 0%, rgba(10,10,10,0) 100%); }
+
+.row.has-fade-left::before{ opacity:1; }
 .row.has-fade-right::after{ opacity:1; }
 
 .carousel{
