@@ -20,14 +20,51 @@
         providerId: 119,
         size: 'xl',
         fallbackRoute: 'film',
-        options: { endpoint: '/discover/movie', maxPages: 2 }
+        options: { endpoint: '/discover/movie', maxPages: 3 }
+      },
+      {
+        id: 'provider-netflix-film',
+        title: 'Film in evidenza su Netflix',
+        providerId: 8,
+        size: 'xl',
+        fallbackRoute: 'film',
+        options: { endpoint: '/discover/movie', maxPages: 3 }
       },
       {
         id: 'provider-now',
         title: 'NOW: film da non perdere',
         providerId: 39,
+        size: 'xl',
+        fallbackRoute: 'film',
+        options: { endpoint: '/discover/movie', maxPages: 3 }
+      },
+      {
+        id: 'provider-apple',
+        title: 'Apple TV+: novità in streaming',
+        providerId: 350,
+        size: 'xl',
         fallbackRoute: 'film',
         options: { endpoint: '/discover/movie', maxPages: 2 }
+      },
+      {
+        id: 'provider-paramount-film',
+        title: 'Paramount+: film consigliati',
+        providerId: 531,
+        size: 'xl',
+        fallbackRoute: 'film',
+        options: { endpoint: '/discover/movie', maxPages: 2 }
+      },
+      {
+        id: 'provider-raiplay',
+        title: 'Film gratuiti su RaiPlay',
+        providerId: 99,
+        size: 'xl',
+        fallbackRoute: 'film',
+        options: {
+          endpoint: '/discover/movie',
+          maxPages: 2,
+          params: { with_watch_monetization_types: 'free' }
+        }
       }
     ],
     tv: [
@@ -37,12 +74,44 @@
         providerId: 8,
         size: 'xl',
         fallbackRoute: 'serie',
-        options: { endpoint: '/discover/tv', maxPages: 2 }
+        options: { endpoint: '/discover/tv', maxPages: 3 }
       },
       {
         id: 'provider-disney',
         title: 'Serie da guardare su Disney+',
         providerId: 337,
+        size: 'xl',
+        fallbackRoute: 'serie',
+        options: { endpoint: '/discover/tv', maxPages: 3 }
+      },
+      {
+        id: 'provider-crunchyroll',
+        title: 'Simulcast su Crunchyroll',
+        providerId: 283,
+        size: 'xl',
+        fallbackRoute: 'serie',
+        options: { endpoint: '/discover/tv', maxPages: 3 }
+      },
+      {
+        id: 'provider-infinity',
+        title: 'Serie da guardare su Mediaset Infinity',
+        providerId: 146,
+        size: 'xl',
+        fallbackRoute: 'serie',
+        options: { endpoint: '/discover/tv', maxPages: 2 }
+      },
+      {
+        id: 'provider-timvision',
+        title: 'TIMVISION: serie consigliate',
+        providerId: 72,
+        size: 'xl',
+        fallbackRoute: 'serie',
+        options: { endpoint: '/discover/tv', maxPages: 2 }
+      },
+      {
+        id: 'provider-paramount-tv',
+        title: 'Novità Paramount+ da vedere',
+        providerId: 531,
         size: 'xl',
         fallbackRoute: 'serie',
         options: { endpoint: '/discover/tv', maxPages: 2 }

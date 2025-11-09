@@ -15,11 +15,15 @@ class HomePage {
     const statusEl           = UIManager.elements.searchStatus;
     let highlight            = null;
 
+    const providerState = HomePage.ensureProviderState();
+    HomePage.ensureProviderExplore();
+
     // pulisco i caroselli SEMPRE
     carouselsContainer.innerHTML = '';
 
     // ---------- MODALITÀ RICERCA ----------
     if (query) {
+      HomePage.toggleProviderSection(false);
       HomePage.renderHero(null);
       statusEl.style.display = 'block';
       statusEl.textContent = (results && results.length)
@@ -36,6 +40,7 @@ class HomePage {
       if (row) carouselsContainer.appendChild(row);
       return; // stop qui, niente resume / categorie
     } else {
+      HomePage.toggleProviderSection(true);
       statusEl.style.display = 'none';
       statusEl.textContent = '';
     }
@@ -151,6 +156,8 @@ class HomePage {
     }
 
     HomePage.renderHero(highlight);
+
+    HomePage.setProviderType(providerState.current);
   }
 
   static navigateToItem(item) {
@@ -274,6 +281,166 @@ class HomePage {
     if (heroMore) {
       heroMore.onclick = () => HomePage.navigateToItem(item);
     }
+  }
+
+  static ensureProviderState() {
+    if (!this._providerState) {
+      this._providerState = {
+        current: 'movie',
+        initialized: false,
+        loaded: { movie: false, tv: false }
+      };
+    }
+    return this._providerState;
+  }
+
+  static ensureProviderExplore() {
+    const state = this.ensureProviderState();
+    if (state.initialized) return;
+
+    const section    = UIManager.elements.providerExploreSection;
+    const filterList = UIManager.elements.providerFilterList;
+    const parent     = UIManager.elements.providerCarousels;
+
+    if (!section || !filterList || !parent) {
+      return;
+    }
+
+    if (!filterList.getAttribute('role')) {
+      filterList.setAttribute('role', 'tablist');
+    }
+
+    const hostIds = { movie: 'provider-host-movie', tv: 'provider-host-tv' };
+    const buttons = Array.from(filterList.querySelectorAll('[data-type]'));
+    buttons.forEach((btn) => {
+      const type = btn.dataset.type === 'tv' ? 'tv' : 'movie';
+      btn.dataset.type = type;
+      if (!btn.getAttribute('role')) {
+        btn.setAttribute('role', 'tab');
+      }
+      btn.setAttribute('aria-controls', hostIds[type]);
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        HomePage.setProviderType(type);
+      });
+    });
+
+    const hosts = {
+      movie: document.createElement('div'),
+      tv: document.createElement('div')
+    };
+
+    hosts.movie.className = 'provider-host carousel-stack';
+    hosts.movie.dataset.providerType = 'movie';
+    hosts.movie.id = hostIds.movie;
+    hosts.movie.setAttribute('aria-hidden', 'false');
+
+    hosts.tv.className = 'provider-host carousel-stack';
+    hosts.tv.dataset.providerType = 'tv';
+    hosts.tv.id = hostIds.tv;
+    hosts.tv.setAttribute('aria-hidden', 'true');
+    hosts.tv.hidden = true;
+
+    parent.appendChild(hosts.movie);
+    parent.appendChild(hosts.tv);
+
+    this._providerHosts = hosts;
+    state.initialized = true;
+    this.updateProviderButtons(state.current);
+  }
+
+  static updateProviderButtons(activeType) {
+    const filterList = UIManager.elements.providerFilterList;
+    if (!filterList) return;
+
+    filterList.querySelectorAll('[data-type]').forEach((btn) => {
+      const isActive = btn.dataset.type === activeType;
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      btn.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+  }
+
+  static showProviderHost(type) {
+    const hosts = this._providerHosts || {};
+    Object.keys(hosts).forEach((key) => {
+      const host = hosts[key];
+      if (!host) return;
+      const isActive = key === type;
+      host.hidden = !isActive;
+      host.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+    });
+  }
+
+  static setProviderType(type) {
+    const state = this.ensureProviderState();
+    const normalized = type === 'tv' ? 'tv' : 'movie';
+    state.current = normalized;
+    this.updateProviderButtons(normalized);
+    this.renderProviders(normalized);
+  }
+
+  static renderProviders(type) {
+    if (!window.ProviderCarousels || typeof ProviderCarousels.renderGroup !== 'function') {
+      return;
+    }
+
+    const state = this.ensureProviderState();
+    const hosts = this._providerHosts || {};
+    const host = hosts[type];
+    if (!host) return;
+
+    this.showProviderHost(type);
+
+    if (state.loaded[type] && host.children.length) {
+      return;
+    }
+
+    host.dataset.state = 'loading';
+
+    ProviderCarousels.renderGroup(type, host, {
+      fallbackRoute: type === 'tv' ? 'serie' : 'film'
+    }).then(() => {
+      const hasRows = host.querySelector('.row');
+      if (hasRows) {
+        host.dataset.state = 'ready';
+        state.loaded[type] = true;
+        return;
+      }
+
+      host.dataset.state = 'empty';
+      host.innerHTML = '';
+      if (window.Carousel && typeof Carousel.createStateRow === 'function') {
+        host.appendChild(
+          Carousel.createStateRow({
+            id: `providers-${type}-empty`,
+            title: '',
+            message: 'Nessun contenuto disponibile al momento.'
+          })
+        );
+      }
+      state.loaded[type] = true;
+    }).catch((error) => {
+      console.warn('HomePage provider render failed:', error);
+      host.dataset.state = 'error';
+      host.innerHTML = '';
+      if (window.Carousel && typeof Carousel.createStateRow === 'function') {
+        host.appendChild(
+          Carousel.createStateRow({
+            id: `providers-${type}-error`,
+            title: '',
+            message: 'Impossibile caricare i contenuti. Riprova più tardi.'
+          })
+        );
+      }
+      state.loaded[type] = false;
+    });
+  }
+
+  static toggleProviderSection(show) {
+    const section = UIManager.elements.providerExploreSection;
+    if (!section) return;
+    section.setAttribute('aria-hidden', show ? 'false' : 'true');
   }
 
   // -------------------------------------------------

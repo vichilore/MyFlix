@@ -23,7 +23,10 @@ class UIManager {
     searchInput: $('#searchInput'),
     searchClear: $('#searchClear'),
     searchPanel: $('#searchPanel'),
-    searchFab: $('#searchFab')
+    searchFab: $('#searchFab'),
+    providerExploreSection: $('#providerExploreSection'),
+    providerFilterList: $('#providerFilters'),
+    providerCarousels: $('#providerCarouselsHome')
   };
 
   static showHome() {
