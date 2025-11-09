@@ -1747,16 +1747,25 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 
 .iptv-provider-section{
   margin-top: 2rem;
-  display: grid;
-  gap: 2rem;
 }
 
-.iptv-provider-row{
-  width: 100%;
+/* se vuoi mantenere uno spazio tra un carosello provider e l’altro */
+.iptv-provider-section > * + *{
+  margin-top: clamp(28px, 4vw, 44px);
 }
 
 .iptv-search-input::placeholder {
   color: #777;
+}
+
+/* Caroselli provider: stesso comportamento di scroll dei base */
+.iptv-provider-row > .row {
+  max-width: 100%;
+}
+
+.iptv-provider-row > .row .carousel {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }
 
 
@@ -2035,3 +2044,11 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .season-picker .season-pills,
 .season-picker .season-pill{ display:none !important; }
 .season-picker .iptv-season-bar{ display:flex; flex-wrap:wrap; gap:.55rem; }
+
+.iptv-provider-section .row-inner {
+  overflow-x: auto;
+}
+
+.iptv-provider-section .row-inner::-webkit-scrollbar {
+  display: none;
+}

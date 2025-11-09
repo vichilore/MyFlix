@@ -164,8 +164,9 @@
 
         <div class="iptv-rows">
           <div class="iptv-recommended" id="iptv-film-recommended-host"></div>
-          <div class="iptv-provider-section" id="iptv-film-provider-host"></div>
-        </div>
+            <div class="iptv-provider-section">
+              <div class="carousel-stack" id="iptv-film-provider-host"></div>
+           </div>
       </div>
     `;
 
@@ -323,7 +324,8 @@
 
         <div class="iptv-rows">
           <div class="iptv-recommended" id="iptv-serie-recommended-host"></div>
-          <div class="iptv-provider-section" id="iptv-serie-provider-host"></div>
+            <div class="iptv-provider-section">
+          <div class="carousel-stack" id="iptv-serie-provider-host"></div>
         </div>
       </div>
     `;
