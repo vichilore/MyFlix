@@ -51,18 +51,24 @@ class HomePage {
     const resumeData = await HomePage.fetchResumeDataDetailed();
 
     // Base: le serie anime, marcate come kind: 'anime'
-    let resumeItems = resumeData.map(x => ({
-      ...x.series,
-      kind: 'anime'
-    }));
+    let resumeItems = resumeData
+      .map(entry => HomePage.buildResumeCard(entry?.series, {
+        kind: 'anime',
+        updatedAt: entry?.updated_at,
+        localTs: entry?._tsLocal
+      }))
+      .filter(Boolean);
 
     // Fallback se non c'è nulla da backend: solo locale anime
     if (!resumeItems.length) {
       const localSeries = HomePage.fetchResumeFromLocalSeriesOnly();
-      resumeItems = localSeries.map(s => ({
-        ...s,
-        kind: 'anime'
-      }));
+      resumeItems = localSeries
+        .map(entry => HomePage.buildResumeCard(entry?.series || entry, {
+          kind: 'anime',
+          updatedAt: entry?.updated_at,
+          localTs: entry?._tsLocal
+        }))
+        .filter(Boolean);
     }
 
     // 1b) IPTV resume: prefer backend (Supabase), fallback to local cache
@@ -78,28 +84,37 @@ class HomePage {
     if (window.IPTVProgress && typeof window.IPTVProgress.getAllResume === 'function') {
       const iptvResume = window.IPTVProgress.getAllResume(20); // array
       if (Array.isArray(iptvResume) && iptvResume.length) {
-        const iptvItems = iptvResume.map(row => ({
-          id: row.tmdbId || row.id,
-          title: row.title,
-          image: row.image,
-          lang: 'IT',
-          year: row.year || '',
-          rating: row.rating || 0,
-          kind: row.kind === 'movie' ? 'movie' : 'tv'
-        }));
+        const iptvItems = iptvResume
+          .map(row => HomePage.buildResumeCard({
+            id: row.tmdbId || row.id,
+            title: row.title,
+            image: row.image,
+            lang: 'IT',
+            year: row.year || '',
+            rating: row.rating || 0,
+            kind: row.kind === 'movie' ? 'movie' : 'tv'
+          }, {
+            kind: row.kind === 'movie' ? 'movie' : 'tv',
+            localTs: row.updatedAt
+          }))
+          .filter(Boolean);
         resumeItems = [...resumeItems, ...iptvItems];
       }
     }
 
     // de-duplicate by kind+id
     if (resumeItems.length) {
-      const seen = new Set();
-      resumeItems = resumeItems.filter(it => {
-        const k = (it.kind||'') + ':' + String(it.id);
-        if (seen.has(k)) return false;
-        seen.add(k);
-        return true;
-      });
+      const deduped = new Map();
+      for (const item of resumeItems) {
+        const key = (item.kind || '') + ':' + String(item.id);
+        const ts = Number(item._resumeSort) || 0;
+        const existing = deduped.get(key);
+        if (!existing || ts > (Number(existing._resumeSort) || 0)) {
+          deduped.set(key, item);
+        }
+      }
+      resumeItems = Array.from(deduped.values())
+        .sort((a, b) => (Number(b._resumeSort) || 0) - (Number(a._resumeSort) || 0));
     }
 
     if (resumeItems.length) {
@@ -194,6 +209,33 @@ class HomePage {
     if (item.id) {
       location.hash = `#/film/${item.id}`;
     }
+  }
+
+  static buildResumeCard(source, { kind, updatedAt, localTs } = {}) {
+    if (!source) return null;
+
+    const item = { ...source };
+    if (kind) {
+      item.kind = kind;
+    }
+
+    let ts = 0;
+    if (updatedAt) {
+      const parsed = new Date(updatedAt).getTime();
+      if (!Number.isNaN(parsed)) {
+        ts = parsed;
+      }
+    }
+
+    if (!ts && localTs != null) {
+      const local = Number(localTs);
+      if (!Number.isNaN(local)) {
+        ts = local;
+      }
+    }
+
+    item._resumeSort = ts || 0;
+    return item;
   }
 
   static renderHero(item) {
@@ -530,7 +572,7 @@ class HomePage {
         const details = await HomePage.loadIptvDetailsById(id).catch(() => null);
         if (!details) return null;
 
-        return {
+        return HomePage.buildResumeCard({
           id: details.id,
           title: details.title,
           image: details.poster || details.image || details.backdrop || '',
@@ -538,7 +580,10 @@ class HomePage {
           year: details.year || '',
           rating: details.rating || 0,
           kind: details.kind === 'tv' ? 'tv' : 'movie'
-        };
+        }, {
+          kind: details.kind === 'tv' ? 'tv' : 'movie',
+          updatedAt: row.updated_at
+        });
       });
 
       const settled = await Promise.allSettled(tasks);
@@ -611,7 +656,11 @@ class HomePage {
   // -------------------------------------------------
   static fetchResumeFromLocalSeriesOnly() {
     const data = HomePage.fetchResumeDataFromLocal();
-    return data.map(x => x.series);
+    return data.map(x => ({
+      series: x.series,
+      updated_at: x.updated_at || null,
+      _tsLocal: x._tsLocal
+    }));
   }
 
   // -------------------------------------------------
