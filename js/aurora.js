@@ -1,6 +1,7 @@
 // js/aurora.js
 (function () {
 
+   const isTablet = document.documentElement.classList.contains('tablet');
   const OGL = window.OGL || window.ogl;
 
   if (!OGL) {
@@ -164,25 +165,63 @@ void main() {
     const mesh = new Mesh(gl, { geometry, program });
     container.appendChild(gl.canvas);
 
-    function resize() {
+        function resize() {
       const width = container.offsetWidth;
       const height = container.offsetHeight;
-      renderer.setSize(width, height);
-      program.uniforms.uResolution.value = [width, height];
+
+      // iPad/tablet -> qualità più alta, PC -> qualità più bassa
+      const baseScale = isTablet ? 0.9 : 0.45;  // prova 0.4–0.6 se serve
+      const scale = Math.max(0.35, Math.min(baseScale, 1));
+
+      const rw = Math.floor(width * scale);
+      const rh = Math.floor(height * scale);
+
+      // risoluzione del render (più piccola su PC)
+      renderer.setSize(rw, rh);
+      program.uniforms.uResolution.value = [rw, rh];
+
+      // ma il canvas a schermo resta full-size
+      const canvas = renderer.gl.canvas;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
     }
+
+
     window.addEventListener('resize', resize);
     resize();
 
     let frameId;
     let start = performance.now();
+    let lastFrame = 0;
+
+    const maxFps = isTablet ? 60 : 30; // iPad 60fps, PC 30fps
+    const frameInterval = 1000 / maxFps;
 
     function update(now) {
       frameId = requestAnimationFrame(update);
-      const t = (now - start) * 0.001;
+
+      // salta i frame troppo ravvicinati (limita gli FPS)
+      if (now - lastFrame < frameInterval) return;
+      lastFrame = now;
+
+      const t = (now - start) * 0.001; // secondi
       program.uniforms.uTime.value = t * options.speed;
       renderer.render({ scene: mesh });
     }
     frameId = requestAnimationFrame(update);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // ferma il loop quando la tab è in background
+        cancelAnimationFrame(frameId);
+      } else {
+        // resetta il tempo e riparti
+        start = performance.now();
+        lastFrame = 0;
+        frameId = requestAnimationFrame(update);
+      }
+    });
+
 
     return () => {
       cancelAnimationFrame(frameId);
@@ -197,6 +236,13 @@ void main() {
   document.addEventListener('DOMContentLoaded', () => {
     const ctn = document.querySelector('.aurora-container');
     if (!ctn) return;
+
+    const isSmallScreen = window.innerWidth < 768;
+  if (isSmallScreen) {
+    // niente aurora su mobile
+    return;
+  }
+
     createAuroraBackground(ctn, {
       // se vuoi cambiare i colori:
       // colorStops: ['#5227FF', '#7CFF67', '#5227FF'],
