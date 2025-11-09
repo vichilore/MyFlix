@@ -573,8 +573,8 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .row::before{ left:0; background: linear-gradient(to right, var(--bg) 0%, rgba(10,10,10,0) 100%); }
 .row::after{ right:0; background: linear-gradient(to left, var(--bg) 0%, rgba(10,10,10,0) 100%); }
 
-.row.has-fade-left::before{ opacity:1; }
-.row.has-fade-right::after{ opacity:1; }
+
+
 
 .carousel{
   position:relative; overflow:auto; display:grid;
@@ -1294,11 +1294,10 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 
 .iptv-page {
   position: fixed;
-  inset: 0;                 /* top:0 right:0 bottom:0 left:0 */
-  z-index: 50;              /* puoi alzare/abbassare se serve */
-  background: #050509;      /* sfondo dark stile app */
+  inset: 0;
+  z-index: 50;
   overflow-y: auto;
-  padding-top: 80px;        /* margine per non stare sotto la navbar (aggiusta se serve) */
+  padding-top: 80px;
 }
 
 .iptv-container {
@@ -2051,4 +2050,18 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 
 .iptv-provider-section .row-inner::-webkit-scrollbar {
   display: none;
+}
+
+.aurora-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#iptv-app {
+  position: relative;
+  z-index: 1;
 }

@@ -74,23 +74,39 @@
 
   // Mostra solo la pagina IPTV come overlay, lasciando intatta la home
   function showIptvPage() {
-    const root = ensureRoot();
+  const root = ensureRoot();
 
-    if (root.parentElement !== document.body) {
-      document.body.appendChild(root);
-    }
-
-    root.style.display = 'block';
-    forceShowNav();
+  if (root.parentElement !== document.body) {
+    document.body.appendChild(root);
   }
+
+  // Nascondi il contenuto "normale" (home / all / watch),
+  // ma lascia la topbar e il resto dell'UI
+  const mainPage = document.querySelector('.page');
+  if (mainPage) {
+    mainPage.style.display = 'none';
+  }
+
+  root.style.display = 'block';
+  forceShowNav();
+}
+
 
   function hideIptvPage() {
-    if (iptvRoot && iptvRoot.parentElement) {
-      iptvRoot.parentElement.removeChild(iptvRoot);
-    }
-    iptvRoot = null;
-    setActiveNav(null);
+  if (iptvRoot && iptvRoot.parentElement) {
+    iptvRoot.parentElement.removeChild(iptvRoot);
   }
+  iptvRoot = null;
+
+  // Riattiva il contenuto "normale" quando esci dai percorsi IPTV
+  const mainPage = document.querySelector('.page');
+  if (mainPage) {
+    mainPage.style.display = '';
+  }
+
+  setActiveNav(null);
+}
+
 
   // ---------- MAPPERS: Film / Serie → card carousel ----------
 
