@@ -69,6 +69,48 @@
         <div class="home-content container">
           <div id="searchStatus" class="search-status" style="display:none"></div>
           <div id="homeCarousels" class="carousel-stack"></div>
+
+          <section
+            id="providerExploreSection"
+            class="home-explore"
+            aria-labelledby="providerExploreTitle"
+            aria-hidden="false"
+          >
+            <div class="home-explore-head">
+              <div class="home-explore-copy">
+                <h2 id="providerExploreTitle">Esplora film e serie TV</h2>
+                <p>Scopri cosa guardare dalle principali piattaforme disponibili in Italia.</p>
+              </div>
+
+              <div
+                class="filter-chips"
+                id="providerFilters"
+                role="tablist"
+                aria-label="Filtra i contenuti dei provider"
+              >
+                <button
+                  class="filter-chip is-active"
+                  type="button"
+                  data-type="movie"
+                  role="tab"
+                  aria-selected="true"
+                >
+                  Film
+                </button>
+                <button
+                  class="filter-chip"
+                  type="button"
+                  data-type="tv"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  Serie TV
+                </button>
+              </div>
+            </div>
+
+            <div id="providerCarouselsHome" class="provider-stack" aria-live="polite"></div>
+          </section>
         </div>
       </section>
 

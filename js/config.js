@@ -43,6 +43,44 @@ window.CONFIG = {
       providerId: "39",
       endpoint: "/discover/movie",
       params: {}
+    },
+    "350": {
+      name: "Apple TV+",
+      providerId: "350",
+      endpoint: "/discover/movie",
+      params: {}
+    },
+    "531": {
+      name: "Paramount+",
+      providerId: "531",
+      endpoint: "/discover/movie",
+      params: {}
+    },
+    "99": {
+      name: "RaiPlay",
+      providerId: "99",
+      endpoint: "/discover/movie",
+      params: {
+        with_watch_monetization_types: "free"
+      }
+    },
+    "146": {
+      name: "Mediaset Infinity",
+      providerId: "146",
+      endpoint: "/discover/tv",
+      params: {}
+    },
+    "72": {
+      name: "TIMVISION",
+      providerId: "72",
+      endpoint: "/discover/tv",
+      params: {}
+    },
+    "283": {
+      name: "Crunchyroll",
+      providerId: "283",
+      endpoint: "/discover/tv",
+      params: {}
     }
   }
 
