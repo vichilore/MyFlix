@@ -6,7 +6,7 @@ class HomePage {
   // Render della Home:
   // - se stai cercando (query) mostra solo i risultati
   // - sennò:
-  //   1. carosello "Riprendi" (anime + film & serie IPTV)
+  //   1. carosello "Riprendi" (solo anime)
   //   2. doppiaggio ITA
   //   3. SUB ITA
   // -------------------------------------------------
@@ -14,9 +14,6 @@ class HomePage {
     const carouselsContainer = UIManager.elements.homeCarousels;
     const statusEl           = UIManager.elements.searchStatus;
     let highlight            = null;
-
-    const providerState = HomePage.ensureProviderState();
-    HomePage.ensureProviderExplore();
 
     // pulisco i caroselli SEMPRE
     carouselsContainer.innerHTML = '';
@@ -40,7 +37,7 @@ class HomePage {
       if (row) carouselsContainer.appendChild(row);
       return; // stop qui, niente resume / categorie
     } else {
-      HomePage.toggleProviderSection(true);
+      HomePage.toggleProviderSection(false);
       statusEl.style.display = 'none';
       statusEl.textContent = '';
     }
@@ -71,37 +68,7 @@ class HomePage {
         .filter(Boolean);
     }
 
-    // 1b) IPTV resume: prefer backend (Supabase), fallback to local cache
-    try {
-      const fromBackend = await HomePage.fetchIptvResumeItems(20);
-      if (fromBackend && fromBackend.length) {
-        resumeItems = [...resumeItems, ...fromBackend];
-      }
-    } catch (e) {
-      console.warn('IPTV resume via backend failed:', e);
-    }
-
-    if (window.IPTVProgress && typeof window.IPTVProgress.getAllResume === 'function') {
-      const iptvResume = window.IPTVProgress.getAllResume(20); // array
-      if (Array.isArray(iptvResume) && iptvResume.length) {
-        const iptvItems = iptvResume
-          .map(row => HomePage.buildResumeCard({
-            id: row.tmdbId || row.id,
-            title: row.title,
-            image: row.image,
-            lang: 'IT',
-            year: row.year || '',
-            rating: row.rating || 0,
-            kind: row.kind === 'movie' ? 'movie' : 'tv'
-          }, {
-            kind: row.kind === 'movie' ? 'movie' : 'tv',
-            localTs: row.updatedAt
-          }))
-          .filter(Boolean);
-        resumeItems = [...resumeItems, ...iptvItems];
-      }
-    }
-
+    // 1b) Solo anime: nessun contenuto IPTV aggiunto nella home
     // de-duplicate by kind+id
     if (resumeItems.length) {
       const deduped = new Map();
@@ -172,7 +139,6 @@ class HomePage {
 
     HomePage.renderHero(highlight);
 
-    HomePage.setProviderType(providerState.current);
   }
 
   static navigateToItem(item) {
@@ -483,6 +449,8 @@ class HomePage {
     const section = UIManager.elements.providerExploreSection;
     if (!section) return;
     section.setAttribute('aria-hidden', show ? 'false' : 'true');
+    section.hidden = !show;
+    section.style.display = show ? '' : 'none';
   }
 
   // -------------------------------------------------

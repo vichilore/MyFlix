@@ -146,10 +146,10 @@ class WatchPage {
   }
 
   // fallback: se non ho trovato sopra, prova l'ultimo episodio noto
-  if (!resumeEp && progress?.lastEp) {
-    const lp = progress.positions?.[progress.lastEp];
+  if (!resumeEp && progress?.lastEpisode) {
+    const lp = progress.positions?.[progress.lastEpisode];
     if (lp && lp.t && lp.d && lp.t < lp.d - 10) {
-      resumeEp = progress.lastEp;
+      resumeEp = progress.lastEpisode;
       resumeSeconds = lp.t || 0;
     }
   }
