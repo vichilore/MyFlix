@@ -6,7 +6,7 @@ class HomePage {
   // Render della Home:
   // - se stai cercando (query) mostra solo i risultati
   // - sennò:
-  //   1. carosello "Riprendi" (solo anime)
+  //   1. carosello "Riprendi" (anime + IPTV)
   //   2. doppiaggio ITA
   //   3. SUB ITA
   // -------------------------------------------------
@@ -68,7 +68,7 @@ class HomePage {
         .filter(Boolean);
     }
 
-     // 1b) IPTV resume: prefer backend (Supabase), fallback to local cache
+    // 1b) IPTV resume: prefer backend (Supabase), fallback to local cache
     try {
       const fromBackend = await HomePage.fetchIptvResumeItems(20);
       if (fromBackend && fromBackend.length) {
@@ -99,8 +99,6 @@ class HomePage {
       }
     }
 
-
-    // 1b) Solo anime: nessun contenuto IPTV aggiunto nella home
     // de-duplicate by kind+id
     if (resumeItems.length) {
       const deduped = new Map();
@@ -170,8 +168,10 @@ class HomePage {
     }
 
     HomePage.renderHero(highlight);
-    HomePage.setProviderType(providerState.current);
 
+    // 💡 FIX: providerState prima va ottenuto da ensureProviderState()
+    const providerState = HomePage.ensureProviderState();
+    HomePage.setProviderType(providerState.current);
   }
 
   static navigateToItem(item) {
@@ -509,7 +509,7 @@ class HomePage {
   // Anime: cloud → fallback locale
   // -------------------------------------------------
   static async fetchResumeDataDetailed() {
-    if (Auth.isLoggedIn()) {
+    if (Auth.isLoggedIn && Auth.isLoggedIn()) {
       try {
         const data = await API.getProgress();
         if (data && Array.isArray(data.progress) && data.progress.length) {
@@ -548,17 +548,18 @@ class HomePage {
         console.warn("fetchResumeDataDetailed backend fail:", err);
       }
     }
-    
 
     // fallback locale (non loggato o nessun dato)
     return HomePage.fetchResumeDataFromLocal();
   }
+
   // -------------------------------------------------
   // fetchIptvResumeItems(limit)
   // Prefer Supabase backend; returns mapped items for carousel
   // -------------------------------------------------
   static async fetchIptvResumeItems(limit = 20) {
-    if (!Auth.isLoggedIn || !Auth.isLoggedIn()) return [];
+    // 💡 FIX: controlla che Auth esista e che isLoggedIn sia una funzione
+    if (!window.Auth || typeof Auth.isLoggedIn !== 'function' || !Auth.isLoggedIn()) return [];
     if (!window.API || typeof API.getIptvResume !== 'function') return [];
 
     try {
@@ -614,6 +615,7 @@ class HomePage {
     } catch {}
     return null;
   }
+
   // -------------------------------------------------
   // fetchResumeDataFromLocal()
   // SOLO anime, come prima (sincrono)
@@ -674,6 +676,3 @@ class HomePage {
     return `al minuto ${mins}`;
   }
 }
-
-
-
