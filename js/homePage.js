@@ -37,7 +37,7 @@ class HomePage {
       if (row) carouselsContainer.appendChild(row);
       return; // stop qui, niente resume / categorie
     } else {
-      HomePage.toggleProviderSection(false);
+      HomePage.toggleProviderSection(true);
       statusEl.style.display = 'none';
       statusEl.textContent = '';
     }
@@ -67,6 +67,38 @@ class HomePage {
         }))
         .filter(Boolean);
     }
+
+     // 1b) IPTV resume: prefer backend (Supabase), fallback to local cache
+    try {
+      const fromBackend = await HomePage.fetchIptvResumeItems(20);
+      if (fromBackend && fromBackend.length) {
+        resumeItems = [...resumeItems, ...fromBackend];
+      }
+    } catch (e) {
+      console.warn('IPTV resume via backend failed:', e);
+    }
+
+    if (window.IPTVProgress && typeof window.IPTVProgress.getAllResume === 'function') {
+      const iptvResume = window.IPTVProgress.getAllResume(20); // array
+      if (Array.isArray(iptvResume) && iptvResume.length) {
+        const iptvItems = iptvResume
+          .map(row => HomePage.buildResumeCard({
+            id: row.tmdbId || row.id,
+            title: row.title,
+            image: row.image,
+            lang: 'IT',
+            year: row.year || '',
+            rating: row.rating || 0,
+            kind: row.kind === 'movie' ? 'movie' : 'tv'
+          }, {
+            kind: row.kind === 'movie' ? 'movie' : 'tv',
+            localTs: row.updatedAt
+          }))
+          .filter(Boolean);
+        resumeItems = [...resumeItems, ...iptvItems];
+      }
+    }
+
 
     // 1b) Solo anime: nessun contenuto IPTV aggiunto nella home
     // de-duplicate by kind+id
@@ -138,6 +170,7 @@ class HomePage {
     }
 
     HomePage.renderHero(highlight);
+    HomePage.setProviderType(providerState.current);
 
   }
 
