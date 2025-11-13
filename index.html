@@ -25,6 +25,7 @@
             <li><a href="#" id="navAllBtn">Tutti</a></li>
             <li><a href="#/film" id="nav-film">Film</a></li>
             <li><a href="#/serie" id="nav-serie">Serie</a></li>
+            <li><a href="#" id="navRouletteBtn">Roulette</a></li>
           </ul>
         </nav>
 
@@ -77,6 +78,24 @@
         <div class="container">
           <h2 class="all-title">Tutti gli anime</h2>
           <div id="allGrid" class="all-grid"></div>
+        </div>
+      </section>
+
+      <!-- ROULETTE -->
+      <section id="roulette" class="roulette" style="display:none">
+        <div class="container roulette-container">
+          <header class="roulette-header">
+            <h1 class="roulette-title">Roulette</h1>
+            <p class="roulette-subtitle">Lasciati sorprendere da un film scelto casualmente tra i migliori titoli disponibili.</p>
+          </header>
+
+          <div class="roulette-carousel" id="rouletteCarousel" aria-hidden="true"></div>
+
+          <div class="roulette-controls">
+            <button id="rouletteSpin" class="btn primary roulette-spin-btn" type="button">Gira</button>
+          </div>
+
+          <div class="roulette-result" id="rouletteResult" aria-live="polite"></div>
         </div>
       </section>
 
@@ -187,6 +206,7 @@
   <script src="js/aurora.js"></script>
   <script src="js/carousel.js"></script>
   <script src="js/providerCarousels.js"></script>
+  <script src="js/roulettePage.js"></script>
   <script src="js/homePage.js"></script>
   <script src="js/allPage.js"></script>
   <script src="js/watchPage.js"></script>
