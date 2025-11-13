@@ -2278,11 +2278,33 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   background: linear-gradient(135deg, rgba(40, 45, 60, 0.2), rgba(20, 20, 28, 0.4));
 }
 
+.roulette-item.is-placeholder {
+  background: linear-gradient(135deg, rgba(55, 60, 78, 0.35), rgba(24, 26, 36, 0.55));
+}
+
+.roulette-item.is-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0)
+  );
+  animation: roulette-placeholder 1.5s linear infinite;
+  opacity: 0.65;
+}
+
 .roulette-item::after {
   content: '';
   position: absolute;
   inset: 0;
   background: rgba(16, 16, 20, 0.35);
+}
+
+.roulette-item.is-placeholder::after {
+  background: rgba(16, 18, 24, 0.45);
 }
 
 .roulette-item img {
@@ -2293,6 +2315,10 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   transform: scale(1.2);
   transition: transform 0.6s ease;
   opacity: 0.9;
+}
+
+.roulette-item.is-placeholder img {
+  display: none;
 }
 
 .roulette-carousel.is-spinning {
@@ -2311,6 +2337,15 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   }
   100% {
     transform: translateX(0) rotateY(0deg);
+  }
+}
+
+@keyframes roulette-placeholder {
+  0% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(60%);
   }
 }
 
@@ -2395,6 +2430,12 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   color: rgba(245, 246, 248, 0.7);
 }
 
+.roulette-card__meta {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(245, 246, 248, 0.62);
+}
+
 .roulette-card__description {
   margin: 0;
   line-height: 1.7;
@@ -2407,6 +2448,13 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   text-align: center;
   font-size: 1.05rem;
   color: rgba(245, 246, 248, 0.7);
+}
+
+.roulette-error {
+  margin: 0;
+  text-align: center;
+  font-size: 1.05rem;
+  color: #ff6b6b;
 }
 
 @media (max-width: 1024px) {
