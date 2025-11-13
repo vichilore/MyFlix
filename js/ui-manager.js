@@ -9,6 +9,7 @@ class UIManager {
     home: $('#home'),
     all: $('#all'),
     watch: $('#watch'),
+    roulette: $('#roulette'),
     allGrid: $('#allGrid'),
     homeCarousels: $('#homeCarousels'),
     homeHero: $('#homeHero'),
@@ -30,8 +31,11 @@ class UIManager {
   };
 
   static showHome() {
+    this.setActiveNav('navHomeBtn');
+
     this.elements.all.style.display = 'none';
     this.elements.watch.style.display = 'none';
+    if (this.elements.roulette) this.elements.roulette.style.display = 'none';
     this.elements.home.style.display = 'block';
 
     requestAnimationFrame(() => {
@@ -43,8 +47,11 @@ class UIManager {
   }
 
   static showAll() {
+    this.setActiveNav('navAllBtn');
+
     this.elements.home.style.display = 'none';
     this.elements.watch.style.display = 'none';
+    if (this.elements.roulette) this.elements.roulette.style.display = 'none';
     this.elements.all.style.display = 'block';
 
     requestAnimationFrame(() => {
@@ -56,8 +63,11 @@ class UIManager {
   }
 
   static showWatch() {
+    this.setActiveNav(null);
+
     this.elements.home.style.display = 'none';
     this.elements.all.style.display = 'none';
+    if (this.elements.roulette) this.elements.roulette.style.display = 'none';
     this.elements.watch.style.display = 'block';
 
     requestAnimationFrame(() => {
@@ -66,6 +76,39 @@ class UIManager {
     });
 
     window.scrollTo({ top: 0 });
+  }
+
+  static showRoulette() {
+    this.setActiveNav('navRouletteBtn');
+
+    this.elements.home.style.display = 'none';
+    this.elements.all.style.display = 'none';
+    this.elements.watch.style.display = 'none';
+    if (this.elements.roulette) this.elements.roulette.style.display = 'block';
+
+    requestAnimationFrame(() => {
+      const nb = $('.topbar')?.getBoundingClientRect().bottom || 0;
+      document.documentElement.style.setProperty('--dock-h', Math.ceil(nb) + 'px');
+    });
+
+    window.scrollTo({ top: 0 });
+  }
+
+  static setActiveNav(id) {
+    try {
+      document
+        .querySelectorAll('.nav-center-box li')
+        .forEach(li => li.classList.remove('active'));
+
+      if (!id) return;
+
+      const anchor = document.getElementById(id);
+      if (anchor && anchor.parentElement) {
+        anchor.parentElement.classList.add('active');
+      }
+    } catch (err) {
+      console.warn('UIManager.setActiveNav error:', err);
+    }
   }
 }
 
