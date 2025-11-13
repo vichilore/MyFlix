@@ -3,6 +3,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // nav buttons
   const navHomeBtn = document.getElementById("navHomeBtn");
   const navAllBtn  = document.getElementById("navAllBtn");
+  const navRouletteBtn = document.getElementById("navRouletteBtn");
 
   navHomeBtn?.addEventListener("click", (e) => {
     e.preventDefault();
@@ -14,6 +15,14 @@ window.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     UIManager.showAll();
     AllPage.render();
+  });
+
+  navRouletteBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    UIManager.showRoulette();
+    if (window.RoulettePage && typeof RoulettePage.render === 'function') {
+      RoulettePage.render();
+    }
   });
 
   // init subsystems (con protezioni)
