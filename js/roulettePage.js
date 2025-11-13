@@ -6,7 +6,7 @@
       name: 'Netflix',
       options: {
         endpoint: '/discover/movie',
-        maxPages: 2,
+        maxPages: 10,
         params: {
           sort_by: 'vote_average.desc',
           'vote_count.gte': 500
@@ -18,10 +18,10 @@
       name: 'Disney+',
       options: {
         endpoint: '/discover/movie',
-        maxPages: 2,
+        maxPages: 10,
         params: {
           sort_by: 'vote_average.desc',
-          'vote_count.gte': 300
+          'vote_count.gte': 400
         }
       }
     },
@@ -30,10 +30,10 @@
       name: 'NOW',
       options: {
         endpoint: '/discover/movie',
-        maxPages: 2,
+        maxPages: 10,
         params: {
           sort_by: 'vote_average.desc',
-          'vote_count.gte': 200
+          'vote_count.gte': 400
         }
       }
     }
