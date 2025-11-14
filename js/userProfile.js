@@ -111,13 +111,101 @@ const UserProfile = (() => {
   }
 
   async function chooseProfile(list) {
-    // Simple fallback selector; can be replaced by a proper modal
     if (!Array.isArray(list) || list.length === 0) return null;
-    const names = list.map((p, i) => `${i+1}) ${p.displayName}`).join('\n');
-    const input = prompt(`Scegli profilo:\n${names}\nInserisci numero:`);
-    const idx = Number(input) - 1;
-    if (Number.isFinite(idx) && idx >= 0 && idx < list.length) return list[idx];
-    return null;
+
+    const {
+      profileSwitcher,
+      profileSwitchList,
+      profileSwitchClose,
+      profileSwitchCancel
+    } = UIManager.elements;
+
+    if (!profileSwitcher || !profileSwitchList) {
+      return null;
+    }
+
+    profileSwitchList.innerHTML = '';
+
+    const previousActive = document.activeElement;
+
+    const cleanup = () => {
+      profileSwitcher.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', onKeyDown, true);
+      profileSwitcher.querySelectorAll('[data-close]')
+        .forEach((el) => el.removeEventListener('click', handleDismiss));
+      profileSwitchClose?.removeEventListener('click', handleDismiss);
+      profileSwitchCancel?.removeEventListener('click', handleDismiss);
+      if (previousActive && typeof previousActive.focus === 'function') {
+        previousActive.focus();
+      }
+    };
+
+    const handleDismiss = () => {
+      cleanup();
+      resolvePromise(null);
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleDismiss();
+      }
+    };
+
+    let resolvePromise;
+
+    const promise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+
+    list.forEach((profile) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'profile-switcher__item';
+      btn.setAttribute('data-id', profile.id);
+      btn.setAttribute('role', 'option');
+
+      const avatar = document.createElement('img');
+      avatar.className = 'profile-switcher__avatar';
+      if (profile.avatarUrl) {
+        avatar.src = profile.avatarUrl;
+      } else {
+        const initial = (profile.displayName || profile.username || '?').trim().charAt(0) || '?';
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="60" fill="#252537"/><text x="50%" y="56%" text-anchor="middle" font-size="56" fill="#fff" font-family="Inter, sans-serif">${initial.toUpperCase()}</text></svg>`;
+        avatar.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+      }
+      avatar.alt = profile.displayName || 'Avatar profilo';
+
+      const name = document.createElement('span');
+      name.className = 'profile-switcher__name';
+      name.textContent = profile.displayName || profile.username || 'Profilo';
+
+      btn.appendChild(avatar);
+      btn.appendChild(name);
+
+      btn.addEventListener('click', () => {
+        cleanup();
+        resolvePromise(profile);
+      });
+
+      profileSwitchList.appendChild(btn);
+    });
+
+    profileSwitcher.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      const first = profileSwitchList.querySelector('button');
+      first?.focus();
+    });
+
+    profileSwitcher.querySelectorAll('[data-close]')
+      .forEach((el) => el.addEventListener('click', handleDismiss));
+    profileSwitchClose?.addEventListener('click', handleDismiss);
+    profileSwitchCancel?.addEventListener('click', handleDismiss);
+    document.addEventListener('keydown', onKeyDown, true);
+
+    return promise.finally(() => {
+      cleanup();
+    });
   }
 
   return { init };
