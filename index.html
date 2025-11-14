@@ -77,6 +77,27 @@
       <section id="all" class="all" style="display:none">
         <div class="container">
           <h2 class="all-title">Tutti gli anime</h2>
+          <div class="all-toolbar" role="region" aria-label="Filtra catalogo anime">
+            <label class="all-filter">
+              <span class="all-filter__label">Cerca</span>
+              <input id="allFilterSearch" class="all-filter__input" type="search" placeholder="Titolo o lingua" autocomplete="off" />
+            </label>
+            <label class="all-filter">
+              <span class="all-filter__label">Lingua</span>
+              <select id="allFilterLanguage" class="all-filter__select">
+                <option value="all">Tutte</option>
+              </select>
+            </label>
+            <label class="all-filter">
+              <span class="all-filter__label">Formato</span>
+              <select id="allFilterFormat" class="all-filter__select">
+                <option value="all">Qualsiasi</option>
+                <option value="series">Serie</option>
+                <option value="movie">Film/Special</option>
+              </select>
+            </label>
+            <button id="allFilterReset" class="all-filter__reset" type="button">Azzera</button>
+          </div>
           <div id="allGrid" class="all-grid"></div>
         </div>
       </section>
@@ -104,16 +125,60 @@
         <div class="watch-hero">
           <img id="watchBanner" class="watch-banner" src="" alt="Banner serie" />
           <div class="watch-hero-overlay">
-            <h1 id="watchTitle">Titolo Anime</h1>
+            <div class="watch-hero-header">
+              <h1 id="watchTitle">Titolo Anime</h1>
+              <div id="watchHeroMeta" class="watch-hero-meta"></div>
+            </div>
+            <p id="watchSummary" class="watch-hero-summary">Seleziona una serie per leggere la sinossi e iniziare la visione.</p>
+            <div id="watchHeroBadges" class="watch-hero-badges"></div>
             <div class="watch-hero-actions">
               <button id="watchResumeBtn" class="btn danger" style="display:none;">▶ Riprendi</button>
+              <button id="watchHeroMore" class="btn ghost" type="button" disabled>Dettagli serie</button>
             </div>
           </div>
         </div>
 
         <div class="watch-container">
-          <div id="seasonPicker" class="season-picker"></div>
-          <div id="episodeList" class="episode-list"></div>
+          <div class="watch-layout">
+            <div class="watch-primary">
+              <div id="seasonPicker" class="season-picker"></div>
+              <div id="episodeList" class="episode-list"></div>
+            </div>
+
+            <aside class="watch-details" aria-label="Dettagli serie">
+              <header class="watch-details__head">
+                <h2 class="watch-details__title">Approfondisci</h2>
+                <button id="watchDetailsMore" class="watch-details__expand" type="button" aria-expanded="false">Apri scheda completa</button>
+              </header>
+
+              <p id="watchSynopsis" class="watch-synopsis">Seleziona una serie per vedere sinossi, lingue e altri dettagli.</p>
+
+              <dl class="watch-meta" aria-live="polite">
+                <div class="watch-meta__row">
+                  <dt>Formato</dt>
+                  <dd id="watchFormat">—</dd>
+                </div>
+                <div class="watch-meta__row">
+                  <dt>Stagioni</dt>
+                  <dd id="watchSeasons">—</dd>
+                </div>
+                <div class="watch-meta__row">
+                  <dt>Episodi totali</dt>
+                  <dd id="watchEpisodes">—</dd>
+                </div>
+                <div class="watch-meta__row">
+                  <dt>Lingue</dt>
+                  <dd id="watchLanguages">—</dd>
+                </div>
+                <div class="watch-meta__row">
+                  <dt>Sorgenti</dt>
+                  <dd id="watchSources">—</dd>
+                </div>
+              </dl>
+
+              <div class="watch-tags" id="watchTags" aria-live="polite"></div>
+            </aside>
+          </div>
         </div>
       </section>
     </main>
@@ -133,9 +198,11 @@
           </div>
         </div>
 
-        <video id="video" controls autoplay playsinline x-webkit-airplay="allow" controlslist="nodownload">
-          <source id="episode" type="video/mp4" src="" />
-        </video>
+        <div class="player-video">
+          <video id="video" controls autoplay playsinline x-webkit-airplay="allow" controlslist="nodownload">
+            <source id="episode" type="video/mp4" src="" />
+          </video>
+        </div>
       </div>
     </div>
   </div>
@@ -180,6 +247,54 @@
   <div id="searchPanel" class="search-panel" role="dialog" aria-modal="true" aria-hidden="true">
     <input id="searchInput" class="search-inp" type="search" autocomplete="off" placeholder="Cerca anime… (titolo o lingua)" />
     <button id="searchClear" class="search-clear" type="button">✕</button>
+    <div class="search-filters" id="searchFilters" role="group" aria-label="Filtri di ricerca">
+      <fieldset class="search-filter-group">
+        <legend class="search-filter-label">Lingua</legend>
+        <div id="searchFilterLanguages" class="search-filter-options"></div>
+      </fieldset>
+      <fieldset class="search-filter-group">
+        <legend class="search-filter-label">Formato</legend>
+        <div class="search-filter-options">
+          <label class="search-filter-chip">
+            <input type="radio" name="searchFormat" value="all" checked />
+            <span>Qualsiasi</span>
+          </label>
+          <label class="search-filter-chip">
+            <input type="radio" name="searchFormat" value="series" />
+            <span>Serie</span>
+          </label>
+          <label class="search-filter-chip">
+            <input type="radio" name="searchFormat" value="movie" />
+            <span>Film/Special</span>
+          </label>
+        </div>
+      </fieldset>
+      <button id="searchFilterReset" class="search-filter-reset" type="button">Azzera filtri</button>
+    </div>
+  </div>
+
+  <!-- PROFILO: selettore modale -->
+  <div id="profileSwitcher" class="profile-switcher" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="profile-switcher__backdrop" data-close="profileSwitcher"></div>
+    <div class="profile-switcher__dialog" role="document">
+      <header class="profile-switcher__header">
+        <h2 class="profile-switcher__title">Scegli un profilo</h2>
+        <button id="profileSwitchClose" class="profile-switcher__close" type="button" aria-label="Chiudi selezione profili">✕</button>
+      </header>
+      <div id="profileSwitchList" class="profile-switcher__list" role="listbox" aria-live="polite"></div>
+      <footer class="profile-switcher__footer">
+        <button id="profileSwitchCancel" class="btn ghost" type="button">Annulla</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Scheda contenuto dettagliata -->
+  <div id="contentDrawer" class="content-drawer" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="content-drawer__backdrop" data-close="contentDrawer"></div>
+    <div class="content-drawer__panel" role="document">
+      <button class="content-drawer__close" id="contentDrawerClose" type="button" aria-label="Chiudi dettagli">✕</button>
+      <div class="content-drawer__body" id="contentDrawerBody"></div>
+    </div>
   </div>
 
   <!-- ================== SCRIPT ORDER ================== -->
@@ -207,6 +322,7 @@
   <script src="js/carousel.js"></script>
   <script src="js/providerCarousels.js"></script>
   <script src="js/roulettePage.js"></script>
+  <script src="js/contentDetails.js"></script>
   <script src="js/homePage.js"></script>
   <script src="js/allPage.js"></script>
   <script src="js/watchPage.js"></script>

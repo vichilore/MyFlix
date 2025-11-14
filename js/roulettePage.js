@@ -137,6 +137,20 @@
       ? `<p class="roulette-card__meta">Valutazione TMDb: ${ratingValue.toFixed(1)}/10</p>`
       : '';
 
+    state.lastFilm = film;
+    const hasDetails = typeof ContentDetails !== 'undefined' && typeof ContentDetails.show === 'function';
+    const tmdbUrl = film.tmdbUrl || '';
+    const watchTarget = film.watchTarget || film.streamUrl || '';
+    const detailButton = hasDetails
+      ? '<button class="btn ghost" data-roulette-action="details" type="button">Apri dettagli</button>'
+      : '';
+    const watchButton = watchTarget
+      ? '<button class="btn primary" data-roulette-action="watch" type="button">Guarda ora</button>'
+      : '';
+    const tmdbButton = tmdbUrl
+      ? '<button class="btn ghost" data-roulette-action="tmdb" type="button">Apri su TMDb</button>'
+      : '';
+
     state.resultEl.innerHTML = `
       <article class="roulette-card">
         <img class="roulette-card__cover" src="${film.poster || film.image}" alt="${film.title}" loading="lazy" />
@@ -146,6 +160,11 @@
           <p class="roulette-card__subtitle">${film.originalTitle}${film.year ? ` · ${film.year}` : ''}</p>
           ${ratingMarkup}
           <p class="roulette-card__description">${film.description}</p>
+          <div class="roulette-card__actions">
+            ${watchButton}
+            ${detailButton}
+            ${tmdbButton}
+          </div>
         </div>
       </article>
     `;
@@ -153,6 +172,30 @@
     requestAnimationFrame(() => {
       state.resultEl.classList.remove('is-hidden');
     });
+
+    const detailBtn = hasDetails ? state.resultEl.querySelector('[data-roulette-action="details"]') : null;
+    if (detailBtn) {
+      detailBtn.addEventListener('click', () => ContentDetails.show(film));
+    }
+
+    const tmdbBtn = tmdbUrl ? state.resultEl.querySelector('[data-roulette-action="tmdb"]') : null;
+    if (tmdbBtn && tmdbUrl) {
+      tmdbBtn.addEventListener('click', () => window.open(tmdbUrl, '_blank', 'noopener'));
+    }
+
+    const watchBtn = watchTarget ? state.resultEl.querySelector('[data-roulette-action="watch"]') : null;
+    if (watchBtn && watchTarget) {
+      watchBtn.addEventListener('click', () => {
+        if (watchTarget.startsWith('#')) {
+          window.location.hash = watchTarget;
+          if (typeof window.scrollTo === 'function') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        } else {
+          window.open(watchTarget, '_blank', 'noopener');
+        }
+      });
+    }
   }
 
   function showInitialMessage() {
@@ -181,6 +224,22 @@
 
     const poster = item.image || '';
     const backdrop = item.backdrop || poster;
+    const mediaType = (item.mediaType || item.type || 'movie').toLowerCase();
+    const tmdbId = typeof item.id === 'number' ? item.id : Number(item.tmdbId || item.id);
+    const tmdbType = /tv|serie/.test(mediaType) ? 'tv' : 'movie';
+    const tmdbUrl = Number.isFinite(tmdbId)
+      ? `https://www.themoviedb.org/${tmdbType}/${tmdbId}?language=it-IT`
+      : '';
+    const watchTarget = Number.isFinite(tmdbId)
+      ? tmdbType === 'tv'
+        ? `#/serie/${tmdbId}`
+        : `#/film/${tmdbId}`
+      : '';
+    const streamUrl = Number.isFinite(tmdbId)
+      ? tmdbType === 'tv'
+        ? `https://vixsrc.to/tv/${tmdbId}/1/1?autoplay=true&primaryColor=B20710&lang=it`
+        : `https://vixsrc.to/movie/${tmdbId}?autoplay=true&primaryColor=B20710&lang=it`
+      : '';
 
     return {
       id: item.id,
@@ -192,7 +251,12 @@
       backdrop,
       description: item.overview || 'Descrizione non disponibile.',
       rating: item.rating || 0,
-      providerName: source?.name || ''
+      providerName: source?.name || '',
+      mediaType,
+      tmdbUrl,
+      tmdbId,
+      watchTarget,
+      streamUrl
     };
   }
 
