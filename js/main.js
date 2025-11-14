@@ -40,6 +40,10 @@ window.addEventListener("DOMContentLoaded", () => {
     Search.init();
   }
 
+  if (typeof AllPage !== "undefined" && typeof AllPage.init === 'function') {
+    AllPage.init();
+  }
+
   if (typeof WatchTogether !== "undefined") {
     WatchTogether.initUI();
   }
