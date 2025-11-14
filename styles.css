@@ -16,6 +16,8 @@
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
   --ring: rgba(229, 9, 20, .45);
+  --player-shell-max-h: 85vh;
+  --player-bar-safe: clamp(96px, 12vh, 136px);
 }
 
 *{ box-sizing:border-box; }
@@ -1080,8 +1082,8 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .player-shell {
   position: relative;
   width: min(90vw, 1280px);
-  height: auto;
-  max-height: 85vh;
+  max-width: min(1280px, calc(max(var(--player-shell-max-h) - var(--player-bar-safe), 0px) * 16 / 9));
+  max-height: var(--player-shell-max-h);
   background: linear-gradient(180deg, #0f0f14, #0a0a0d);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
@@ -1091,13 +1093,40 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   flex-direction: column;
 }
 
-.player-shell video {
+.player-video {
+  position: relative;
+  width: min(100%, calc(max(var(--player-shell-max-h) - var(--player-bar-safe), 0px) * 16 / 9));
+  max-height: max(var(--player-shell-max-h) - var(--player-bar-safe), 0px);
+  margin: 0 auto;
+  background: #000;
+  overflow: hidden;
+}
+
+.player-video::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
+}
+
+.player-video video {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: auto;
-  flex: 1 1 auto;
+  height: 100%;
   background: #000;
   object-fit: contain;
   display: block;
+}
+
+@supports (aspect-ratio: 16 / 9) {
+  .player-video {
+    aspect-ratio: 16 / 9;
+    padding-top: 0;
+  }
+
+  .player-video::before {
+    display: none;
+  }
 }
 
 /* top bar */
@@ -1658,10 +1687,15 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 .iptv-player-frame-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 */
+  background: #000;
   border-radius: 14px;
   overflow: hidden;
-  background: #000;
+}
+
+.iptv-player-frame-wrapper::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
 }
 
 .iptv-player-frame {
@@ -1670,6 +1704,18 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+@supports (aspect-ratio: 16 / 9) {
+  .iptv-player-frame-wrapper,
+  .iptv-player-frame-inner {
+    aspect-ratio: 16 / 9;
+  }
+
+  .iptv-player-frame-wrapper::before,
+  .iptv-player-frame-inner::before {
+    display: none;
+  }
 }
 
 .iptv-player-page {
@@ -1849,22 +1895,18 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
 
 .iptv-player-frame-inner {
   position: relative;
-  width: 100%;
-  max-width: 1100px;
+  width: min(100%, 1100px);
   margin: 0 auto;
-  padding-top: 56.25%; /* 16:9 */
+  background: #000;
   border-radius: 0.8rem;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0,0,0,0.7);
-  background: #000;
 }
 
-.iptv-player-frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
+.iptv-player-frame-inner::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%;
 }
 
 .iptv-search-bar {
