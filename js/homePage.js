@@ -10,7 +10,7 @@ class HomePage {
   //   2. doppiaggio ITA
   //   3. SUB ITA
   // -------------------------------------------------
-  static async render({ query = '', results = null } = {}) {
+  static async render({ query = '', results = null, filtersActive = false, filterLabel = '' } = {}) {
     const carouselsContainer = UIManager.elements.homeCarousels;
     const statusEl           = UIManager.elements.searchStatus;
     let highlight            = null;
@@ -19,17 +19,25 @@ class HomePage {
     carouselsContainer.innerHTML = '';
 
     // ---------- MODALITÀ RICERCA ----------
-    if (query) {
+    const queryLabel = (query || '').trim();
+    const isSearchMode = Boolean(queryLabel) || filtersActive;
+
+    if (isSearchMode) {
       HomePage.toggleProviderSection(false);
       HomePage.renderHero(null);
       statusEl.style.display = 'block';
+      const descriptor = queryLabel
+        ? `Risultati per "${queryLabel}"`
+        : (filterLabel || 'Filtri attivi');
       statusEl.textContent = (results && results.length)
-        ? `Risultati per "${query}" — ${results.length}`
-        : `Nessun risultato per "${query}"`;
+        ? `${descriptor} — ${results.length}`
+        : (queryLabel
+            ? `Nessun risultato per "${queryLabel}"`
+            : 'Nessun contenuto trovato con i filtri selezionati');
 
       const row = Carousel.create({
-        id: 'row-search',
-        title: 'Risultati',
+        id: queryLabel ? 'row-search' : 'row-filter',
+        title: queryLabel ? 'Risultati' : 'Catalogo filtrato',
         items: results || [],
         size: 'xl'
       });
@@ -320,7 +328,14 @@ class HomePage {
     }
 
     if (heroMore) {
-      heroMore.onclick = () => HomePage.navigateToItem(item);
+      const canShowDetails = typeof ContentDetails !== 'undefined' && typeof ContentDetails.show === 'function';
+      heroMore.onclick = () => {
+        if (canShowDetails) {
+          ContentDetails.show(item);
+        } else {
+          HomePage.navigateToItem(item);
+        }
+      };
     }
   }
 
