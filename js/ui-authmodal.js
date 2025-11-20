@@ -5,7 +5,7 @@ const AuthModal = (() => {
     const modal = document.getElementById('authModal');
     if (!modal) return;
 
-    const tabs   = modal.querySelectorAll('.auth-tab-btn');
+    const tabs = modal.querySelectorAll('.auth-tab-btn');
     const panels = modal.querySelectorAll('.auth-panel');
 
     function showTab(tabName) {
@@ -28,11 +28,18 @@ const AuthModal = (() => {
       errBox.textContent = '';
 
       try {
-        await Auth.doLogin(u,p);
+        await Auth.doLogin(u, p);
         afterLogin();
-      } catch(e){
+      } catch (e) {
         errBox.textContent = e.message;
       }
+    });
+
+    // GUEST
+    const guestBtn = document.getElementById('guest_btn');
+    guestBtn?.addEventListener('click', () => {
+      Auth.loginAsGuest();
+      afterLogin();
     });
 
     // SIGNUP
@@ -45,9 +52,9 @@ const AuthModal = (() => {
       errBox.textContent = '';
 
       try {
-        await Auth.doSignup(u,p,a || null);
+        await Auth.doSignup(u, p, a || null);
         afterLogin();
-      } catch(e){
+      } catch (e) {
         errBox.textContent = e.message;
       }
     });
@@ -85,5 +92,5 @@ const AuthModal = (() => {
     HomePage.render();
   }
 
-  return { init, show:()=>{}, hide:()=>{} };
+  return { init, show: () => { }, hide: () => { } };
 })();

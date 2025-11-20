@@ -3,9 +3,9 @@
 
 const API = (() => {
 
-    const FALLBACK_URL = "https://itanime-api.onrender.com";
-    const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-    const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
+  const FALLBACK_URL = "https://itanime-api.onrender.com";
+  const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+  const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
   // Invece di fissare BASE_URL una volta sola, lo calcoliamo ogni volta.
   function getBaseUrl() {
@@ -113,10 +113,13 @@ const API = (() => {
 
   // --- PROFILE ---
   async function getCurrentProfile() {
+    if (Auth.getToken() === 'guest_token') {
+      return { id: 'guest', displayName: 'Ospite', avatarUrl: 'https://via.placeholder.com/150?text=Guest' };
+    }
     try {
       const data = await authedRequest("GET", "/profiles/me");
       return normalizeProfile(data);
-    } catch(e) {
+    } catch (e) {
       // fallback a /me per backend che non espone /profiles/me
       const data = await authedRequest("GET", "/me");
       return normalizeProfile(data);
@@ -124,10 +127,11 @@ const API = (() => {
   }
 
   async function listMyProfiles() {
+    if (Auth.getToken() === 'guest_token') return [];
     try {
       const data = await authedRequest("GET", "/profiles?owner=me");
       return normalizeProfileList(data);
-    } catch(e) {
+    } catch (e) {
       try {
         const data = await authedRequest("GET", "/profiles");
         return normalizeProfileList(data);

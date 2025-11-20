@@ -2,7 +2,7 @@
 
 const Auth = (() => {
   const TOKEN_KEY = "vichi_token";
-  const USER_KEY  = "vichi_user";
+  const USER_KEY = "vichi_user";
 
   function getToken() {
     return localStorage.getItem(TOKEN_KEY) || null;
@@ -22,7 +22,7 @@ const Auth = (() => {
 
   function setSession({ token, user }) {
     if (token) localStorage.setItem(TOKEN_KEY, token);
-    if (user)  localStorage.setItem(USER_KEY, JSON.stringify(user));
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
   function clearSession() {
@@ -42,6 +42,17 @@ const Auth = (() => {
     return data.user;
   }
 
+  function loginAsGuest() {
+    const guestUser = {
+      id: "guest",
+      username: "Ospite",
+      isGuest: true,
+      avatarUrl: "https://via.placeholder.com/150?text=Guest"
+    };
+    setSession({ token: "guest_token", user: guestUser });
+    return guestUser;
+  }
+
   function logout() {
     clearSession();
     location.reload();
@@ -54,6 +65,7 @@ const Auth = (() => {
     setSession,
     doSignup,
     doLogin,
+    loginAsGuest,
     logout
   };
 })();

@@ -1,18 +1,20 @@
 <!doctype html>
 <html lang="it">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>AmiciCari.tv</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
 
-     <div class="aurora-container"></div>
+  <div class="aurora-container"></div>
 
   <div class="app">
     <!-- ===== TOPBAR FISSA ===== -->
-   <!-- ===== TOPBAR FISSA ===== -->
+    <!-- ===== TOPBAR FISSA ===== -->
     <header class="topbar">
       <div class="topbar-inner container">
         <div class="brand" id="brandLogo">
@@ -86,7 +88,8 @@
         <div class="container roulette-container">
           <header class="roulette-header">
             <h1 class="roulette-title">Roulette</h1>
-            <p class="roulette-subtitle">Lasciati sorprendere da un film scelto casualmente tra i migliori titoli disponibili.</p>
+            <p class="roulette-subtitle">Lasciati sorprendere da un film scelto casualmente tra i migliori titoli
+              disponibili.</p>
           </header>
 
           <div class="roulette-carousel" id="rouletteCarousel" aria-hidden="true"></div>
@@ -154,6 +157,8 @@
         <input id="login_pin" type="password" inputmode="numeric" autocomplete="current-password" />
         <button id="login_btn" class="auth-primary-btn" type="button">Accedi</button>
         <div id="login_error" class="auth-error"></div>
+        <button id="guest_btn" class="auth-secondary-btn" type="button" style="margin-top: 10px; width: 100%;">Entra
+          come ospite</button>
       </div>
       <div class="auth-panel" data-panel="signup" style="display:none;">
         <label for="signup_username">Username</label>
@@ -171,14 +176,15 @@
   <!-- SEARCH FAB -->
   <button id="searchFab" class="search-ico" type="button" aria-label="Apri ricerca">
     <svg viewBox="0 0 250 250" width="100%" height="100%">
-      <circle cx="104" cy="104" r="72" stroke="currentColor" stroke-width="24" fill="none"/>
-      <line x1="160" y1="160" x2="228" y2="228" stroke="currentColor" stroke-width="24" stroke-linecap="round"/>
+      <circle cx="104" cy="104" r="72" stroke="currentColor" stroke-width="24" fill="none" />
+      <line x1="160" y1="160" x2="228" y2="228" stroke="currentColor" stroke-width="24" stroke-linecap="round" />
     </svg>
   </button>
 
   <!-- SEARCH PANEL -->
   <div id="searchPanel" class="search-panel" role="dialog" aria-modal="true" aria-hidden="true">
-    <input id="searchInput" class="search-inp" type="search" autocomplete="off" placeholder="Cerca anime… (titolo o lingua)" />
+    <input id="searchInput" class="search-inp" type="search" autocomplete="off"
+      placeholder="Cerca anime… (titolo o lingua)" />
     <button id="searchClear" class="search-clear" type="button">✕</button>
   </div>
 
@@ -222,4 +228,5 @@
   <script src="js/userProfile.js"></script>
   <script src="js/main.js"></script>
 </body>
+
 </html>

@@ -1417,6 +1417,22 @@ section,.row,#homeCarousels{ scroll-margin-top:calc(var(--dock-h) + var(--dock-g
   padding:10px;
   cursor:pointer;
 }
+.auth-secondary-btn {
+  width:100%;
+  margin-top:10px;
+  background:transparent;
+  border:1px solid #3f4254;
+  color:#fff;
+  font-weight:600;
+  border-radius:8px;
+  padding:10px;
+  cursor:pointer;
+  transition: all 0.2s;
+}
+.auth-secondary-btn:hover {
+  border-color: #fff;
+  background: rgba(255,255,255,0.05);
+}
 .auth-error {
   min-height:16px;
   font-size:12px;
